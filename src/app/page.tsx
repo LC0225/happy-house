@@ -121,12 +121,12 @@ export default function Home() {
       <header className="text-white shadow-lg relative overflow-hidden">
         {/* 背景图片拼接 */}
         <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 z-0">
-          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=600&fit=crop" alt="star1" className="w-full h-full object-cover" />
-          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop" alt="star2" className="w-full h-full object-cover" />
-          <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=600&fit=crop" alt="star3" className="w-full h-full object-cover" />
-          <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&h=600&fit=crop" alt="star4" className="w-full h-full object-cover" />
-          <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=600&fit=crop" alt="star5" className="w-full h-full object-cover" />
-          <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=600&fit=crop" alt="star6" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&h=600&fit=crop" alt="star1" className="w-full h-full object-cover object-top" />
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=600&fit=crop" alt="star2" className="w-full h-full object-cover object-top" />
+          <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&h=600&fit=crop" alt="star3" className="w-full h-full object-cover object-top" />
+          <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=600&fit=crop" alt="star4" className="w-full h-full object-cover object-top" />
+          <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&h=600&fit=crop" alt="star5" className="w-full h-full object-cover object-top" />
+          <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=600&fit=crop" alt="star6" className="w-full h-full object-cover object-top" />
         </div>
         {/* 深色遮罩层 */}
         <div className="absolute inset-0" style={{ backgroundColor: "rgba(88, 28, 135, 0.75)", zIndex: 1 }}></div>
