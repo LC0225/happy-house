@@ -1,0 +1,54 @@
+Project Export Guide
+====================
+
+The project has been successfully packaged!
+
+Package location: /workspace/export_temp/happy-house.tar.gz
+Package size: 288KB
+
+Included files:
+- src/ (source code directory)
+- public/ (static assets)
+- package.json (dependency configuration)
+- vercel.json (Vercel deployment configuration)
+- README.md (project documentation)
+- next.config.ts (Next.js configuration)
+- tailwind.config.ts (Tailwind CSS configuration)
+- tsconfig.json (TypeScript configuration)
+- .npmrc (pnpm configuration)
+- .gitignore (Git ignore configuration)
+
+Excluded:
+- node_modules/ (dependencies)
+- .next/ (build output)
+- .git/ (version control)
+- .cozeproj/ (platform configuration)
+- .coze (platform configuration)
+
+How to use this package:
+
+Method 1: Push to GitHub and download (Recommended)
+1. Push the code to your GitHub repository
+2. Visit the repository in browser, click "Code" -> "Download ZIP"
+3. Extract and use
+
+Method 2: Direct use of the tarball
+1. Download happy-house.tar.gz to your local machine
+2. Extract: tar -xzf happy-house.tar.gz (Linux/Mac)
+   or use WinRAR/7-Zip (Windows)
+3. Enter directory: cd happy-house
+4. Install dependencies: pnpm install
+5. Start project: pnpm dev
+
+Local development commands:
+- pnpm install   # Install dependencies
+- pnpm dev        # Start development server (port 5000)
+- pnpm build      # Build production version
+- pnpm start      # Start production server
+
+Note: First run requires pnpm installation
+npm install -g pnpm
+or
+pnpm add -g pnpm
+
+Happy coding! 🚀

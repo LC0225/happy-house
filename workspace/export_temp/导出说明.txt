@@ -1,0 +1,49 @@
+项目已成功打包！
+
+压缩包位置: /workspace/export_temp/happy-house.tar.gz
+压缩包大小: 288KB
+
+包含的文件：
+- src/ (源代码目录)
+- public/ (静态资源)
+- package.json (依赖配置)
+- vercel.json (Vercel 部署配置)
+- README.md (项目文档)
+- next.config.ts (Next.js 配置)
+- tailwind.config.ts (Tailwind CSS 配置)
+- tsconfig.json (TypeScript 配置)
+- .npmrc (pnpm 配置)
+- .gitignore (Git 忽略配置)
+
+已排除：
+- node_modules/ (依赖包)
+- .next/ (构建输出)
+- .git/ (Git 版本控制)
+- .cozeproj/ (平台配置)
+- .coze (平台配置)
+
+如何使用此压缩包：
+
+方法一：推送到 GitHub 后下载（推荐）
+1. 将代码推送到你的 GitHub 仓库
+2. 在浏览器访问仓库，点击 "Code" -> "Download ZIP"
+3. 解压后使用
+
+方法二：直接使用压缩包
+1. 将 happy-house.tar.gz 下载到本地
+2. 解压: tar -xzf happy-house.tar.gz (Linux/Mac)
+   或使用 WinRAR/7-Zip 解压 (Windows)
+3. 进入目录: cd happy-house
+4. 安装依赖: pnpm install
+5. 启动项目: pnpm dev
+
+本地开发命令：
+- pnpm install   # 安装依赖
+- pnpm dev        # 启动开发服务器 (端口 5000)
+- pnpm build      # 构建生产版本
+- pnpm start      # 启动生产服务器
+
+注意：首次运行需要安装 pnpm
+npm install -g pnpm
+或
+pnpm add -g pnpm
