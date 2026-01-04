@@ -1,66 +1,146 @@
-import type { Metadata } from "next";
+'use client';
 
-export const metadata: Metadata = {
-  title: "扣子编程 - AI 开发伙伴",
-  description: "扣子编程，你的 AI 开发伙伴已就位",
-};
+import { useState, useMemo } from 'react';
+import Link from 'next/link';
+import { mockMediaData, countries, years, getGenresByType, getTagsByType } from '@/data/mockData';
+import { MediaType, FilterOptions } from '@/types/media';
+import MediaCard from '@/components/MediaCard';
+import FilterBar from '@/components/FilterBar';
 
 export default function Home() {
+  const [selectedType, setSelectedType] = useState<MediaType | '全部'>('全部');
+  const [selectedCountry, setSelectedCountry] = useState<string>('全部');
+  const [selectedYear, setSelectedYear] = useState<string>('全部');
+  const [selectedGenre, setSelectedGenre] = useState<string>('全部');
+  const [selectedTag, setSelectedTag] = useState<string>('全部');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // 根据选择的类型获取对应的分类和标签
+  const currentGenres = selectedType === '全部' ? ['全部'] : getGenresByType(selectedType);
+  const currentTags = selectedType === '全部' ? ['全部'] : getTagsByType(selectedType);
+
+  const filteredData = useMemo(() => {
+    return mockMediaData.filter(item => {
+      const matchType = selectedType === '全部' || item.type === selectedType;
+      const matchCountry = selectedCountry === '全部' || item.country === selectedCountry;
+      const matchYear = selectedYear === '全部' || item.year.toString() === selectedYear;
+      const matchGenre = selectedGenre === '全部' || item.genre.includes(selectedGenre);
+      const matchTag = selectedTag === '全部' || item.tags.includes(selectedTag);
+      const matchSearch = !searchQuery || 
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      return matchType && matchCountry && matchYear && matchGenre && matchTag && matchSearch;
+    });
+  }, [selectedType, selectedCountry, selectedYear, selectedGenre, selectedTag, searchQuery]);
+
+  const mediaTypes: (MediaType | '全部')[] = ['全部', '小说', '动漫', '电视剧', '综艺', '短剧'];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white text-black transition-colors duration-300 dark:bg-black dark:text-white">
-      {/* 主容器 */}
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between px-16 py-32 sm:items-start">
-        {/* 头部：Logo 和 产品名称 */}
-        <div className="flex items-center gap-3">
-          {/* 注意：生产环境建议使用 next/image 并配置 remotePatterns */}
-          <img
-            className="dark:invert"
-            src="https://lf3-static.bytednsdoc.com/obj/eden-cn/hkpzboz/coze_logo.png"
-            alt="扣子编程 Logo"
-            width={40}
-            height={40}
-            style={{ width: "40px", height: "40px", objectFit: "contain" }}
+    <div className="min-h-screen bg-gray-50">
+      {/* 头部 */}
+      <header className="bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">多媒体内容平台</h1>
+              <p className="text-purple-100">发现小说、动漫、电视剧、综艺、短剧</p>
+            </div>
+            <Link
+              href="/profile"
+              className="px-6 py-3 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              个人中心
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* 主内容 */}
+      <main className="container mx-auto px-4 py-8">
+        {/* 搜索栏 */}
+        <div className="mb-8">
+          <input
+            type="text"
+            placeholder="搜索标题、描述或标签..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
-          <span className="text-xl font-bold tracking-tight text-black dark:text-zinc-50">
-            扣子编程
-          </span>
         </div>
 
-        {/* 中间内容区：主标题和副标题 */}
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-tight text-black dark:text-zinc-50">
-            扣子编程，你的 AI 开发伙伴已就位
-          </h1>
-          <p className="max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            当前是空白入口文件，项目正在开发中，请稍候...
-            <br />
-            开发完成后界面将自动更新。如未自动更新成功，可以手动点击右上角刷新或重启按钮查看效果。
-          </p>
+        {/* 类型切换 */}
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-2">
+            {mediaTypes.map(type => (
+              <button
+                key={type}
+                onClick={() => setSelectedType(type)}
+                className={`px-6 py-2 rounded-full font-medium transition-colors ${
+                  selectedType === type
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-purple-100'
+                }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* 底部按钮区 */}
-        <div className="flex w-full flex-col gap-4 text-base font-medium sm:w-auto sm:flex-row">
-          {/* 按钮 1：前往首页 */}
-          <a
-            className="flex h-12 w-full min-w-[160px] items-center justify-center gap-2 rounded-full bg-black px-8 text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 md:w-auto"
-            href="https://code.coze.cn/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            前往首页
-          </a>
+        {/* 筛选栏 - 只在选择具体类型时显示 */}
+        {selectedType !== '全部' && (
+          <FilterBar
+            countries={countries}
+            years={years}
+            genres={currentGenres}
+            tags={currentTags}
+            selectedCountry={selectedCountry}
+            selectedYear={selectedYear}
+            selectedGenre={selectedGenre}
+            selectedTag={selectedTag}
+            onCountryChange={setSelectedCountry}
+            onYearChange={setSelectedYear}
+            onGenreChange={setSelectedGenre}
+            onTagChange={setSelectedTag}
+          />
+        )}
 
-          {/* 按钮 2：查看文档 */}
-          <a
-            className="flex h-12 w-full min-w-[160px] items-center justify-center rounded-full border border-solid border-black/[.08] px-8 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-auto"
-            href="https://docs.coze.cn/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            查看文档
-          </a>
+        {/* 结果统计 */}
+        <div className="mb-6 text-gray-600">
+          <span className="font-semibold">共 {filteredData.length} 部作品</span>
+          {selectedType !== '全部' && <span className="ml-2">· {selectedType}</span>}
+          {selectedCountry !== '全部' && <span className="ml-2">· {selectedCountry}</span>}
+          {selectedYear !== '全部' && <span className="ml-2">· {selectedYear}</span>}
+          {selectedGenre !== '全部' && <span className="ml-2">· {selectedGenre}</span>}
+          {selectedTag !== '全部' && <span className="ml-2">· {selectedTag}</span>}
         </div>
+
+        {/* 内容展示 */}
+        {filteredData.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {filteredData.map(item => (
+              <MediaCard key={item.id} media={item} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <p className="text-gray-500 text-xl">没有找到匹配的内容</p>
+            <p className="text-gray-400 mt-2">请尝试调整筛选条件</p>
+          </div>
+        )}
       </main>
+
+      {/* 页脚 */}
+      <footer className="bg-gray-800 text-white py-6 mt-12">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-gray-400">多媒体内容平台 - 发现更多精彩内容</p>
+        </div>
+      </footer>
     </div>
   );
 }
