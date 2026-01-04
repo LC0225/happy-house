@@ -9,15 +9,23 @@ import Link from 'next/link';
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'favorites' | 'history'>('favorites');
   const [selectedType, setSelectedType] = useState<MediaType | '全部'>('全部');
+  const [mounted, setMounted] = useState(false);
 
   // 从 localStorage 加载收藏状态
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
-    if (typeof window !== 'undefined') {
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+
+  // 只在客户端挂载后加载 localStorage
+  useEffect(() => {
+    setMounted(true);
+    try {
       const saved = localStorage.getItem('favorites');
-      return saved ? new Set(JSON.parse(saved)) : new Set();
+      if (saved) {
+        setFavoriteIds(new Set(JSON.parse(saved)));
+      }
+    } catch (error) {
+      console.error('Failed to load favorites from localStorage:', error);
     }
-    return new Set();
-  });
+  }, []);
 
   // 获取收藏的媒体
   const favorites = useMemo(() => {

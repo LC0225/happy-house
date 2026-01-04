@@ -53,6 +53,7 @@ src/
 │   ├── detail/[id]/page.tsx    # 详情页
 │   ├── play/[id]/page.tsx      # 播放页
 │   ├── profile/page.tsx        # 个人中心
+│   ├── test/page.tsx           # 测试页面
 │   ├── page.tsx                # 首页
 │   └── layout.tsx              # 根布局
 ├── components/
@@ -91,6 +92,7 @@ src/
 
 ## 📚 文档
 
+- `ULTRA_OPTIMIZATION.md` - 极致优化方案（重要！）
 - `DEPLOYMENT_READY.md` - 部署就绪指南
 - `TIMEOUT_SOLUTION.md` - 超时问题解决方案
 - `DEPLOYMENT_TROUBLESHOOTING.md` - 故障排除指南
@@ -111,12 +113,17 @@ npx tsc --noEmit     # TypeScript 类型检查
 ### SSR 相关
 - 页面使用 `'use client'` 标记为客户端组件
 - localStorage 访问已在 useEffect 中延迟加载
-- 所有外部依赖已移除
+- 所有外部依赖已移除（包括 Google Fonts）
 
 ### 构建相关
 - 使用 npm 而非 pnpm（Vercel 兼容性）
 - 构建时间约 10 秒
 - 首屏加载 < 100ms
+
+### Vercel 部署
+- 不指定 region，让 Vercel 自动选择最优节点
+- 移除 Google Fonts，使用系统默认字体
+- 极致优化后，应该能在 1-3 分钟内完成部署
 
 ## 🎯 后续优化
 
@@ -137,6 +144,7 @@ MIT License
 
 ---
 
-**版本**：v1.1.0
-**状态**：✅ 生产就绪，可以部署
+**版本**：v1.2.0-optimized
+**状态**：✅ 极致优化完成，准备部署
 **最后更新**：2024-01-04
+**关键优化**：移除 Google Fonts 和 Region 配置
