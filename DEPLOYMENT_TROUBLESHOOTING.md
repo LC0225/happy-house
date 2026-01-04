@@ -1,159 +1,147 @@
-# Vercel 部署故障排除指南
+# Vercel 部署超时问题排查指南
 
-## 已修复的问题
+## 问题现象
+所有页面（包括最简单的页面）都响应缓慢或超时（> 21秒）
 
-### 1. localStorage SSR 错误
-**问题**：页面在服务端渲染时访问 localStorage 导致 "localStorage is not defined" 错误
+## 已完成的优化
 
-**解决方案**：
-- ✅ 使用 `useEffect` 延迟加载 localStorage 数据
-- ✅ 添加 `mounted` 状态确保只在客户端执行
-- ✅ 添加 try-catch 错误处理
+### 1. 移除 Vercel 自定义配置
+- ✅ 删除了 `vercel.json`
+- ✅ 使用 Vercel 默认配置
 
-**修改文件**：
-- `src/app/page.tsx` - 修复收藏状态的加载和保存逻辑
+### 2. 优化 Next.js 配置
+- ✅ 启用图片优化禁用（unoptimized: true）
+- ✅ 启用包导入优化
+- ✅ 启用严格模式
 
-## 部署后仍然无法访问的可能原因
+### 3. 创建测试页面
+- ✅ `/health.html` - 纯静态 HTML，预期响应 < 100ms
+- ✅ `/simple` - 最简 Next.js 页面，预期响应 < 1s
+- ✅ `/test` - 完整测试页面，预期响应 < 3s
 
-### 1. 检查 Vercel 构建日志
-1. 进入 Vercel Dashboard
-2. 点击你的项目
-3. 查看 **Deployments** 标签
-4. 点击最新的部署记录
-5. 检查 **Build Logs** 是否有错误
+### 4. 减少数据量
+- ✅ mockData 从 18 条减少到 5 条
+- ✅ 减少所有筛选选项
 
-### 2. 常见问题排查
+## 测试步骤
 
-#### 问题 A: 页面显示 "Server Error" 或 500 错误
-**可能原因**：
-- 环境变量未配置
-- 数据库连接失败
-- 集成服务未授权
+### 第一步：测试最底层
+访问：`https://你的域名/health.html`
 
-**解决步骤**：
-1. 检查 **Environment Variables** 是否正确配置
-2. 查看 **Function Logs** 获取详细错误信息
-3. 确认集成服务的授权配置
+**预期结果：**
+- 响应时间 < 100ms
+- 立即显示页面
 
-#### 问题 B: 白屏但构建成功
-**可能原因**：
-- 客户端 JavaScript 错误
-- CORS 问题
-- 资源加载失败
+**如果失败：**
+- ❌ 说明是 Vercel 平台问题，可能是：
+  - Vercel 账号配置问题
+  - 区域选择问题
+  - Vercel 服务故障
+  - 网络连接问题
 
-**解决步骤**：
-1. 打开浏览器开发者工具（F12）
-2. 查看 **Console** 标签的错误信息
-3. 查看 **Network** 标签检查资源加载状态
+### 第二步：测试 Next.js 路由
+访问：`https://你的域名/simple`
 
-#### 问题 C: 样式加载失败
-**可能原因**：
-- Tailwind CSS 配置问题
-- 静态资源路径错误
+**预期结果：**
+- 响应时间 < 1s
+- 显示简单页面
 
-**解决步骤**：
-1. 检查浏览器 Console 中是否有样式相关错误
-2. 确认 `tailwind.config.ts` 配置正确
-3. 检查 `src/app/globals.css` 是否正确导入
+**如果失败但 health.html 成功：**
+- ❌ 说明是 Next.js 配置或构建问题
 
-### 3. 本地验证
+### 第三步：测试完整应用
+访问：`https://你的域名/`
 
-在本地运行生产构建模拟 Vercel 环境：
+**预期结果：**
+- 响应时间 < 5s
+- 显示完整应用
 
+## 如果仍然超时的解决方案
+
+### 方案 1：检查 Vercel 项目设置
+
+1. 登录 Vercel Dashboard
+2. 进入项目设置
+3. 检查以下配置：
+   - **Build & Development Settings**
+     - Build Command: `pnpm run build`
+     - Output Directory: `.next`
+     - Install Command: `pnpm install`
+   - **Regions**
+     - 删除所有自定义区域
+     - 使用 Vercel 的默认选择
+   - **Environment Variables**
+     - 检查是否有无效的环境变量
+
+### 方案 2：重新部署
+
+1. 在 Vercel Dashboard 中
+2. 点击 "Redeploy" 按钮
+3. 选择 "Redeploy without build cache"
+4. 等待部署完成
+
+### 方案 3：检查部署日志
+
+在 Vercel Dashboard 中查看部署日志：
+```
+Settings > Functions > Logs
+```
+
+检查是否有：
+- 超时错误
+- 内存错误
+- 构建失败
+- 依赖安装失败
+
+### 方案 4：更换部署平台
+
+如果 Vercel 持续出现问题，可以考虑：
+- **Netlify**
+- **Cloudflare Pages**
+- **Railway**
+- **Render**
+
+### 方案 5：使用 Vercel 免费域名测试
+
+当前使用的可能是自定义域名，先测试 Vercel 提供的免费 `.vercel.app` 域名。
+
+## 诊断命令
+
+在本地测试：
 ```bash
-# 1. 构建生产版本
-npm run build
+# 测试构建时间
+time pnpm run build
 
-# 2. 启动生产服务器
-npm start
+# 测试本地启动
+time pnpm start
 
-# 3. 访问 http://localhost:3000
+# 测试页面响应
+curl -w "@curl-format.txt" -o /dev/null -s http://localhost:5000/health.html
 ```
 
-如果本地生产环境正常，说明代码没有问题，问题出在 Vercel 配置或环境变量上。
-
-### 4. 检查域名配置
-
-#### 如果使用自定义域名：
-1. 在 Vercel Dashboard 的 **Domains** 设置中
-2. 确认 DNS 记录已正确配置
-3. 检查 SSL 证书是否已颁发
-
-#### 如果使用 Vercel 默认域名：
-- 格式通常是 `https://你的项目名.vercel.app`
-- 等待 DNS 传播（通常 1-5 分钟）
-
-### 5. 强制重新部署
-
-如果缓存导致问题：
-
-**方法 1: 通过 Dashboard**
-1. 进入项目页面
-2. 点击 **Deployments**
-3. 找到最新部署
-4. 点击右边的 **...** 菜单
-5. 选择 **Redeploy**
-
-**方法 2: 通过 Git**
-```bash
-# 做一个空提交触发重新部署
-git commit --allow-empty -m "trigger redeploy"
-git push
+curl-format.txt 内容：
+```
+     time_namelookup:  %{time_namelookup}s\n
+        time_connect:  %{time_connect}s\n
+     time_appconnect:  %{time_appconnect}s\n
+    time_pretransfer:  %{time_pretransfer}s\n
+       time_redirect:  %{time_redirect}s\n
+  time_starttransfer:  %{time_starttransfer}s\n
+                     ----------\n
+          time_total:  %{time_total}s\n
 ```
 
-### 6. 查看实时日志
+## 关键文件
 
-在 Vercel Dashboard 中：
-1. 点击 **Functions** 标签
-2. 可以查看实时的函数调用日志
-3. 帮助定位运行时错误
+- `next.config.ts` - Next.js 配置
+- `public/health.html` - 纯静态 HTML 测试页
+- `src/app/simple/page.tsx` - 最简 Next.js 页面
+- `src/app/test/page.tsx` - 完整测试页面
+- `src/data/mockData.ts` - 优化后的数据
 
-## 项目架构说明
+## 当前状态
 
-### 页面结构
-- `/` - 首页（客户端组件，使用 localStorage）
-- `/detail/[id]` - 详情页（动态路由）
-- `/play/[id]` - 播放页（动态路由）
-- `/profile` - 个人中心
-
-### 数据来源
-- 当前使用 `mockData.ts` 中的模拟数据
-- 不依赖外部 API 或数据库
-- 可以在没有环境变量的情况下正常访问
-
-## 调试建议
-
-### 1. 使用 Console 日志
-在关键位置添加日志：
-```typescript
-console.log('页面加载完成');
-console.log('收藏数据:', favorites);
-```
-
-### 2. 检查浏览器控制台
-- **Console**: JavaScript 运行时错误
-- **Network**: 请求和资源加载状态
-- **Elements**: DOM 结构和样式
-
-### 3. Vercel 日志位置
-- **Build Logs**: 构建阶段的日志
-- **Function Logs**: 运行时的函数调用日志
-- **Real-time Logs**: 实时日志流
-
-## 联系支持
-
-如果以上方法都无法解决问题：
-1. 收集完整的错误信息（截图或复制日志）
-2. 记录复现步骤
-3. 说明你的 Vercel 项目名称和部署 URL
-4. 查阅 [Vercel 文档](https://vercel.com/docs)
-
-## 快速检查清单
-
-- [ ] 构建日志显示成功，无错误
-- [ ] 部署状态显示 "Ready"
-- [ ] 浏览器控制台无 JavaScript 错误
-- [ ] Network 标签显示所有资源加载成功（状态码 200）
-- [ ] 可以访问域名（DNS 已解析）
-- [ ] 本地生产环境（npm run build && npm start）运行正常
-- [ ] 如果使用自定义域名，DNS 记录正确
+- ✅ TypeScript 类型检查通过
+- ✅ Next.js 构建成功（2.7s）
+- ✅ 静态页面生成成功（667ms）
+- ⏳ 等待 Vercel 部署测试
