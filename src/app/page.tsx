@@ -9,42 +9,107 @@ import FilterBar from '@/components/FilterBar';
 
 export default function Home() {
   const [selectedType, setSelectedType] = useState<MediaType | '全部'>('全部');
-  const [selectedCountry, setSelectedCountry] = useState<string>('全部');
-  const [selectedYear, setSelectedYear] = useState<string>('全部');
-  const [selectedGenre, setSelectedGenre] = useState<string>('全部');
-  const [selectedTag, setSelectedTag] = useState<string>('全部');
+
+  // 实际生效的筛选条件
+  const [appliedFilters, setAppliedFilters] = useState({
+    country: '全部',
+    year: '全部',
+    genre: '全部',
+    tag: '全部'
+  });
+
+  // 临时筛选条件（用户正在调整但未确认的）
+  const [tempFilters, setTempFilters] = useState({
+    country: '全部',
+    year: '全部',
+    genre: '全部',
+    tag: '全部'
+  });
+
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // 根据选择的类型获取对应的分类和标签
   const currentGenres = selectedType === '全部' ? ['全部'] : getGenresByType(selectedType);
   const currentTags = selectedType === '全部' ? ['全部'] : getTagsByType(selectedType);
 
+  // 当切换类型时，重置筛选条件
+  const handleTypeChange = (type: MediaType | '全部') => {
+    setSelectedType(type);
+    setAppliedFilters({
+      country: '全部',
+      year: '全部',
+      genre: '全部',
+      tag: '全部'
+    });
+    setTempFilters({
+      country: '全部',
+      year: '全部',
+      genre: '全部',
+      tag: '全部'
+    });
+  };
+
+  // 确认筛选
+  const handleApplyFilters = () => {
+    setAppliedFilters({ ...tempFilters });
+  };
+
+  // 重置筛选
+  const handleResetFilters = () => {
+    setTempFilters({
+      country: '全部',
+      year: '全部',
+      genre: '全部',
+      tag: '全部'
+    });
+    setAppliedFilters({
+      country: '全部',
+      year: '全部',
+      genre: '全部',
+      tag: '全部'
+    });
+  };
+
   const filteredData = useMemo(() => {
     return mockMediaData.filter(item => {
-      const matchType = selectedType === '全部' || item.type === selectedType;
-      const matchCountry = selectedCountry === '全部' || item.country === selectedCountry;
-      const matchYear = selectedYear === '全部' || item.year.toString() === selectedYear;
-      const matchGenre = selectedGenre === '全部' || item.genre.includes(selectedGenre);
-      const matchTag = selectedTag === '全部' || item.tags.includes(selectedTag);
-      const matchSearch = !searchQuery || 
+      // 首先匹配类型
+      if (selectedType !== '全部' && item.type !== selectedType) return false;
+
+      // 然后匹配筛选条件（只对当前类型生效）
+      const matchCountry = appliedFilters.country === '全部' || item.country === appliedFilters.country;
+      const matchYear = appliedFilters.year === '全部' || item.year.toString() === appliedFilters.year;
+      const matchGenre = appliedFilters.genre === '全部' || item.genre.includes(appliedFilters.genre);
+      const matchTag = appliedFilters.tag === '全部' || item.tags.includes(appliedFilters.tag);
+      const matchSearch = !searchQuery ||
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-      return matchType && matchCountry && matchYear && matchGenre && matchTag && matchSearch;
+
+      return matchCountry && matchYear && matchGenre && matchTag && matchSearch;
     });
-  }, [selectedType, selectedCountry, selectedYear, selectedGenre, selectedTag, searchQuery]);
+  }, [selectedType, appliedFilters, searchQuery]);
 
   const mediaTypes: (MediaType | '全部')[] = ['全部', '小说', '动漫', '电视剧', '综艺', '短剧'];
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 头部 */}
-      <header className="bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg">
+      <header
+        className="text-white shadow-lg"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(88, 28, 135, 0.85), rgba(37, 99, 235, 0.85)),
+            linear-gradient(90deg, #1e3a5f 0%, #2d4a6f 25%, #1e3a5f 50%, #2d4a6f 75%, #1e3a5f 100%),
+            linear-gradient(180deg, #4c1d95 0%, #2563eb 100%)
+          `,
+          backgroundSize: '100% 100%, 50px 50px, 100% 100%',
+          backgroundPosition: '0 0, 0 0, 0 0'
+        }}
+      >
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">多媒体内容平台</h1>
+              <h1 className="text-3xl font-bold mb-2">快乐屋</h1>
               <p className="text-purple-100">发现小说、动漫、电视剧、综艺、短剧</p>
             </div>
             <Link
@@ -79,7 +144,7 @@ export default function Home() {
             {mediaTypes.map(type => (
               <button
                 key={type}
-                onClick={() => setSelectedType(type)}
+                onClick={() => handleTypeChange(type)}
                 className={`px-6 py-2 rounded-full font-medium transition-colors ${
                   selectedType === type
                     ? 'bg-purple-600 text-white'
@@ -94,30 +159,48 @@ export default function Home() {
 
         {/* 筛选栏 - 只在选择具体类型时显示 */}
         {selectedType !== '全部' && (
-          <FilterBar
-            countries={countries}
-            years={years}
-            genres={currentGenres}
-            tags={currentTags}
-            selectedCountry={selectedCountry}
-            selectedYear={selectedYear}
-            selectedGenre={selectedGenre}
-            selectedTag={selectedTag}
-            onCountryChange={setSelectedCountry}
-            onYearChange={setSelectedYear}
-            onGenreChange={setSelectedGenre}
-            onTagChange={setSelectedTag}
-          />
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <FilterBar
+              countries={countries}
+              years={years}
+              genres={currentGenres}
+              tags={currentTags}
+              selectedCountry={tempFilters.country}
+              selectedYear={tempFilters.year}
+              selectedGenre={tempFilters.genre}
+              selectedTag={tempFilters.tag}
+              onCountryChange={(value) => setTempFilters({ ...tempFilters, country: value })}
+              onYearChange={(value) => setTempFilters({ ...tempFilters, year: value })}
+              onGenreChange={(value) => setTempFilters({ ...tempFilters, genre: value })}
+              onTagChange={(value) => setTempFilters({ ...tempFilters, tag: value })}
+            />
+
+            {/* 操作按钮 */}
+            <div className="flex gap-4 mt-6 pt-6 border-t border-gray-200">
+              <button
+                onClick={handleApplyFilters}
+                className="px-8 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+              >
+                确认筛选
+              </button>
+              <button
+                onClick={handleResetFilters}
+                className="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              >
+                重置
+              </button>
+            </div>
+          </div>
         )}
 
         {/* 结果统计 */}
         <div className="mb-6 text-gray-600">
           <span className="font-semibold">共 {filteredData.length} 部作品</span>
           {selectedType !== '全部' && <span className="ml-2">· {selectedType}</span>}
-          {selectedCountry !== '全部' && <span className="ml-2">· {selectedCountry}</span>}
-          {selectedYear !== '全部' && <span className="ml-2">· {selectedYear}</span>}
-          {selectedGenre !== '全部' && <span className="ml-2">· {selectedGenre}</span>}
-          {selectedTag !== '全部' && <span className="ml-2">· {selectedTag}</span>}
+          {appliedFilters.country !== '全部' && <span className="ml-2">· {appliedFilters.country}</span>}
+          {appliedFilters.year !== '全部' && <span className="ml-2">· {appliedFilters.year}年</span>}
+          {appliedFilters.genre !== '全部' && <span className="ml-2">· {appliedFilters.genre}</span>}
+          {appliedFilters.tag !== '全部' && <span className="ml-2">· {appliedFilters.tag}</span>}
         </div>
 
         {/* 内容展示 */}
