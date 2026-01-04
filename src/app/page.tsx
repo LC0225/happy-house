@@ -118,69 +118,16 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 头部 */}
-      <header
-        className="text-white shadow-lg"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(88, 28, 135, 0.88), rgba(37, 99, 235, 0.88)),
-            url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&h=450&fit=crop'),
-            url('https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300&h=450&fit=crop')
-          `,
-          backgroundSize: '100% 100%, 300px 450px',
-          backgroundPosition: '0 0, 0% 0%, 10% 0%, 20% 0%, 30% 0%, 40% 0%, 50% 0%, 60% 0%, 70% 0%, 80% 0%, 90% 0%, 100% 0%, 0% 50%, 10% 50%, 20% 50%, 30% 50%, 40% 50%, 50% 50%, 60% 50%, 70% 50%, 80% 50%, 90% 50%, 100% 50%, 0% 100%, 10% 100%, 20% 100%, 30% 100%, 40% 100%, 50% 100%, 60% 100%, 70% 100%, 80% 100%, 90% 100%, 100% 100%',
-          backgroundRepeat: 'no-repeat',
-          backgroundBlendMode: 'overlay'
-        }}
-      >
+      <header className="text-white shadow-lg relative overflow-hidden">
+        {/* 背景图片拼接 */}
+        <div className="absolute inset-0 grid grid-cols-3 grid-rows-2">
+          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=600&fit=crop" alt="star1" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop" alt="star2" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=600&fit=crop" alt="star3" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&h=600&fit=crop" alt="star4" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=600&fit=crop" alt="star5" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=600&fit=crop" alt="star6" className="w-full h-full object-cover" />
+        </div>
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
