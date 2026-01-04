@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { mockMediaData, countries, years, getGenresByType, getTagsByType } from '@/data/mockData';
 import { MediaType, FilterOptions } from '@/types/media';
@@ -27,15 +27,23 @@ export default function Home() {
   });
 
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
 
   // 从 localStorage 加载收藏状态
-  const [favorites, setFavorites] = useState<Set<string>>(() => {
-    if (typeof window !== 'undefined') {
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  // 只在客户端挂载后加载 localStorage
+  useEffect(() => {
+    setMounted(true);
+    try {
       const saved = localStorage.getItem('favorites');
-      return saved ? new Set(JSON.parse(saved)) : new Set();
+      if (saved) {
+        setFavorites(new Set(JSON.parse(saved)));
+      }
+    } catch (error) {
+      console.error('Failed to load favorites from localStorage:', error);
     }
-    return new Set();
-  });
+  }, []);
 
   // 切换收藏并保存到 localStorage
   const handleToggleFavorite = (id: string) => {
@@ -46,8 +54,14 @@ export default function Home() {
       } else {
         newFavorites.add(id);
       }
-      // 保存到 localStorage
-      localStorage.setItem('favorites', JSON.stringify([...newFavorites]));
+      // 只在客户端保存到 localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('favorites', JSON.stringify([...newFavorites]));
+        } catch (error) {
+          console.error('Failed to save favorites to localStorage:', error);
+        }
+      }
       return newFavorites;
     });
   };
