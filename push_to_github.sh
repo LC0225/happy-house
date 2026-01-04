@@ -24,12 +24,12 @@ if [ -n "$(git status --porcelain)" ]; then
     git add .
 
     # 提交
-    git commit -m "fix: 切换到 npm 解决 Vercel 部署问题
+    git commit -m "docs: 更新 Vercel 部署说明
 
-- 移除 packageManager 字段，改用 npm
-- 简化 vercel.json 配置
-- 删除 .npmrc 和 pnpm-lock.yaml
-- Vercel 将使用默认 npm 安装依赖"
+- 添加 VERCEL_CONFIG_GUIDE.md 详细配置指南
+- 移除所有 pnpm 相关配置
+- 更新 README.md 和操作指南
+- 需要在 Vercel Dashboard 手动设置"
 
     echo "✓ 代码已提交"
 else
