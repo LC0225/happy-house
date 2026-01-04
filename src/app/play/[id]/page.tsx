@@ -4,7 +4,7 @@ import { mockMediaData, mockUserData } from '@/data/mockData';
 import { MediaContent, MediaType, WatchHistory, Bookmark } from '@/types/media';
 import { use } from 'react';
 import Link from 'next/link';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 
 export default function PlayPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -32,6 +32,20 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   // 倍速选项
   const speedOptions = [1, 1.25, 1.5, 2, 3];
 
+  // 使用ref存储最新值，避免useEffect频繁重新执行
+  const currentChapterRef = useRef(currentChapter);
+  const currentTimeRef = useRef(currentTime);
+  const mediaRef = useRef(media);
+  const totalChaptersRef = useRef(totalChapters);
+
+  // 更新ref的值
+  useEffect(() => {
+    currentChapterRef.current = currentChapter;
+    currentTimeRef.current = currentTime;
+    mediaRef.current = media;
+    totalChaptersRef.current = totalChapters;
+  }, [currentChapter, currentTime, media, totalChapters]);
+
   // 生成区域选项
   const generateRegions = (total: number, regionSize: number) => {
     const regions = [];
@@ -51,16 +65,17 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const chapterRegions = useMemo(() => generateRegions(totalChapters, 100), [totalChapters]);
   const episodeRegions = useMemo(() => generateRegions(totalEpisodes, 10), [totalEpisodes]);
 
-  // 自动保存进度
+  // 自动保存进度（只在组件挂载时执行一次）
   useEffect(() => {
-    if (!media) return;
-
     const saveInterval = setInterval(() => {
+      const currentMedia = mediaRef.current;
+      if (!currentMedia) return;
+
       // 自动保存进度
       const progress: WatchHistory = {
-        mediaId: media.id,
+        mediaId: currentMedia.id,
         watchTime: new Date().toISOString(),
-        progress: media.type === '小说' ? (currentChapter / totalChapters) * 100 : (currentTime / 3600) * 100
+        progress: currentMedia.type === '小说' ? (currentChapterRef.current / totalChaptersRef.current) * 100 : (currentTimeRef.current / 3600) * 100
       };
 
       console.log('自动保存进度:', progress);
@@ -68,7 +83,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
     }, 5000); // 每5秒自动保存一次
 
     return () => clearInterval(saveInterval);
-  }, [media, currentChapter, currentTime, totalChapters]);
+  }, []); // 空依赖数组，只在挂载时执行一次
 
   // 加载观看历史
   useEffect(() => {
