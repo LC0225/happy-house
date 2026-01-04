@@ -305,42 +305,6 @@ export const getTagsByType = (type: string): string[] => {
   }
 };
 
-// 模拟用户数据
-export const mockUserData = {
-  favorites: ['1', '4', '7', '11'], // 收藏的媒体ID
-  watchHistory: [
-    {
-      mediaId: '4',
-      watchTime: '2024-01-15T10:30:00Z',
-      progress: 75
-    },
-    {
-      mediaId: '7',
-      watchTime: '2024-01-14T15:20:00Z',
-      progress: 45
-    },
-    {
-      mediaId: '11',
-      watchTime: '2024-01-13T09:10:00Z',
-      progress: 90
-    }
-  ],
-  bookmarks: [
-    {
-      mediaId: '1',
-      chapter: 10,
-      note: '精彩章节，三体问题首次提出',
-      createTime: '2024-01-10T14:30:00Z'
-    },
-    {
-      mediaId: '4',
-      timestamp: 1234,
-      note: '艾伦巨人之力觉醒',
-      createTime: '2024-01-12T16:20:00Z'
-    }
-  ]
-};
-
 // 用户数据（模拟）
 export const mockUserData: UserData = {
   favorites: ['1', '4', '7', '11', '14', '15'], // 收藏的媒体ID
@@ -353,5 +317,9 @@ export const mockUserData: UserData = {
     { mediaId: '11', watchTime: new Date('2024-01-10T14:30:00').toISOString(), progress: 100 },
     { mediaId: '14', watchTime: new Date('2024-01-09T16:00:00').toISOString(), progress: 70 },
     { mediaId: '15', watchTime: new Date('2024-01-08T19:30:00').toISOString(), progress: 30 },
+  ],
+  bookmarks: [
+    { mediaId: '1', chapter: 10, note: '三体问题首次提出', createTime: new Date('2024-01-10T14:30:00').toISOString() },
+    { mediaId: '4', timestamp: 1234, note: '艾伦觉醒', createTime: new Date('2024-01-12T16:20:00').toISOString() }
   ]
 };
