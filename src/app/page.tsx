@@ -118,19 +118,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 头部 */}
-      <header className="text-white shadow-lg relative overflow-hidden">
-        {/* 背景图片拼接 */}
-        <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 z-0">
-          <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&h=600&fit=crop" alt="star1" className="w-full h-full object-cover object-top" />
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=600&fit=crop" alt="star2" className="w-full h-full object-cover object-top" />
-          <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&h=600&fit=crop" alt="star3" className="w-full h-full object-cover object-top" />
-          <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&h=600&fit=crop" alt="star4" className="w-full h-full object-cover object-top" />
-          <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&h=600&fit=crop" alt="star5" className="w-full h-full object-cover object-top" />
-          <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=600&fit=crop" alt="star6" className="w-full h-full object-cover object-top" />
-        </div>
-        {/* 深色遮罩层 */}
-        <div className="absolute inset-0" style={{ backgroundColor: "rgba(88, 28, 135, 0.75)", zIndex: 1 }}></div>
-        <div className="container mx-auto px-4 py-6 relative" style={{ zIndex: 2 }}>
+      <header
+        className="text-white shadow-lg relative"
+        style={{ backgroundColor: "#002FA7" }}
+      >
+        <div className="container mx-auto px-4 py-6 relative">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2">快乐屋</h1>
