@@ -24,12 +24,12 @@ if [ -n "$(git status --porcelain)" ]; then
     git add .
 
     # 提交
-    git commit -m "docs: 更新 Vercel 部署说明
+    git commit -m "docs: 添加 Vercel 部署最终解决方案
 
-- 添加 VERCEL_CONFIG_GUIDE.md 详细配置指南
-- 移除所有 pnpm 相关配置
-- 更新 README.md 和操作指南
-- 需要在 Vercel Dashboard 手动设置"
+- 创建 SOLUTION.md 完整解决方案指南
+- 提供删除并重新导入项目的详细步骤
+- 这是解决 pnpm 错误的最可靠方法
+- 代码已经正确，问题在 Vercel 配置"
 
     echo "✓ 代码已提交"
 else
@@ -55,6 +55,8 @@ if [ $? -eq 0 ]; then
     echo "1. 访问 https://github.com/LC0225/happy-house"
     echo "2. 点击 'Code' 按钮"
     echo "3. 选择 'Download ZIP' 下载项目"
+    echo ""
+    echo "或者按照 SOLUTION.md 中的步骤配置 Vercel 部署"
     echo ""
 else
     echo ""
