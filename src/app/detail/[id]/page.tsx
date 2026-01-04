@@ -4,6 +4,7 @@ import { mockMediaData } from '@/data/mockData';
 import { MediaContent } from '@/types/media';
 import Link from 'next/link';
 import { use } from 'react';
+import PlaceholderImage from '@/components/PlaceholderImage';
 
 export default function DetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -56,11 +57,7 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
           <div className="md:flex">
             {/* 图片区域 */}
             <div className="md:w-1/3">
-              <img
-                src={media.image}
-                alt={media.title}
-                className="w-full h-auto object-cover"
-              />
+              <PlaceholderImage media={media} className="w-full h-auto" />
             </div>
 
             {/* 信息区域 */}

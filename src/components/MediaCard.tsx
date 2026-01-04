@@ -3,6 +3,7 @@
 import { MediaContent } from '@/types/media';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import PlaceholderImage from './PlaceholderImage';
 
 interface MediaCardProps {
   media: MediaContent;
@@ -63,11 +64,7 @@ export default function MediaCard({ media, isFavorite = false, onFavoriteToggle 
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group">
         {/* 图片区域 */}
         <div className="relative aspect-[2/3] overflow-hidden">
-          <img
-            src={media.image}
-            alt={media.title}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-          />
+          <PlaceholderImage media={media} className="w-full h-full" />
           {/* 类型标签 */}
           <div className={`absolute top-2 left-2 ${getTypeColor(media.type)} text-white px-3 py-1 rounded-full text-sm font-medium`}>
             {media.type}
