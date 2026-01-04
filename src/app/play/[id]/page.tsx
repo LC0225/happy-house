@@ -17,12 +17,39 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const [showBookmarkModal, setShowBookmarkModal] = useState(false);
   const [bookmarkNote, setBookmarkNote] = useState('');
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+
+  // 区域选择
+  const [selectedRegion, setSelectedRegion] = useState('1');
 
   // 模拟集数数据
   const totalEpisodes = 30;
 
   // 模拟章节数据
   const totalChapters = 500;
+
+  // 倍速选项
+  const speedOptions = [1, 1.25, 1.5, 2, 3];
+
+  // 生成区域选项
+  const generateRegions = (total: number, regionSize: number) => {
+    const regions = [];
+    for (let i = 0; i < total; i += regionSize) {
+      const start = i + 1;
+      const end = Math.min(i + regionSize, total);
+      regions.push({
+        id: start.toString(),
+        label: `${start}-${end}`,
+        start,
+        end
+      });
+    }
+    return regions;
+  };
+
+  const chapterRegions = generateRegions(totalChapters, 100);
+  const episodeRegions = generateRegions(totalEpisodes, 10);
 
   // 自动保存进度
   useEffect(() => {
@@ -54,10 +81,16 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
         const mediaBookmark = mockUserData.bookmarks.find(b => b.mediaId === media.id);
         if (mediaBookmark && mediaBookmark.chapter) {
           setCurrentChapter(mediaBookmark.chapter);
+          // 设置对应的区域
+          const region = chapterRegions.find(r => mediaBookmark.chapter! >= r.start && mediaBookmark.chapter! <= r.end);
+          if (region) setSelectedRegion(region.id);
         }
       } else {
         // 视频：加载上次播放时间
         setCurrentTime(watchHistory.progress * 36); // 假设视频总时长60分钟
+        // 设置对应的区域
+        const region = episodeRegions.find(r => currentEpisode >= r.start && currentEpisode <= r.end);
+        if (region) setSelectedRegion(region.id);
       }
     }
 
@@ -66,7 +99,7 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
       const mediaBookmarks = mockUserData.bookmarks.filter(b => b.mediaId === media.id);
       setBookmarks(mediaBookmarks);
     }
-  }, [media]);
+  }, [media, currentEpisode, chapterRegions, episodeRegions]);
 
   // 添加书签（仅小说）
   const handleAddBookmark = () => {
@@ -91,6 +124,9 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
   const jumpToBookmark = (bookmark: Bookmark) => {
     if (bookmark.chapter) {
       setCurrentChapter(bookmark.chapter);
+      // 更新对应的区域
+      const region = chapterRegions.find(r => bookmark.chapter! >= r.start && bookmark.chapter! <= r.end);
+      if (region) setSelectedRegion(region.id);
     }
   };
 
@@ -137,6 +173,19 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
     }
   };
 
+  // 获取当前区域的章节/集数列表
+  const getCurrentRegionList = () => {
+    if (media.type === '小说') {
+      const region = chapterRegions.find(r => r.id === selectedRegion);
+      if (!region) return [];
+      return Array.from({ length: region.end - region.start + 1 }, (_, i) => region.start + i);
+    } else {
+      const region = episodeRegions.find(r => r.id === selectedRegion);
+      if (!region) return [];
+      return Array.from({ length: region.end - region.start + 1 }, (_, i) => region.start + i);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 头部 */}
@@ -147,19 +196,6 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
               ← 返回详情
             </Link>
             <div className="flex items-center gap-4">
-              <button
-                onClick={handleCast}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  isCasting
-                    ? 'bg-green-500 text-white'
-                    : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                {isCasting ? '投屏中...' : '投屏'}
-              </button>
               {media.type === '小说' && (
                 <button
                   onClick={() => setShowBookmarkModal(true)}
@@ -192,49 +228,60 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
             <h1 className="text-3xl font-bold text-gray-800">{media.title}</h1>
           </div>
 
-          {/* 章节/集数选择 */}
+          {/* 章节/集数选择 - 区域划分 */}
           <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {media.type === '小说' ? '章节选择' : '集数选择'}
             </label>
-            {media.type === '小说' ? (
-              <div className="flex items-center gap-4">
-                <select
-                  value={currentChapter}
-                  onChange={(e) => setCurrentChapter(Number(e.target.value))}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  {Array.from({ length: totalChapters }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      第 {i + 1} 章
+            <div className="flex items-center gap-4 mb-4">
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                {media.type === '小说' ? (
+                  chapterRegions.map((region) => (
+                    <option key={region.id} value={region.id}>
+                      {region.label}
                     </option>
-                  ))}
-                </select>
-                <div className="text-gray-600 text-sm">
-                  共 {totalChapters} 章
-                </div>
+                  ))
+                ) : (
+                  episodeRegions.map((region) => (
+                    <option key={region.id} value={region.id}>
+                      {region.label}
+                    </option>
+                  ))
+                )}
+              </select>
+              <div className="text-gray-600 text-sm">
+                共 {media.type === '小说' ? totalChapters : totalEpisodes} {media.type === '小说' ? '章' : '集'}
               </div>
-            ) : (
-              <div className="flex items-center gap-4">
-                <select
-                  value={currentEpisode}
-                  onChange={(e) => {
-                    setCurrentEpisode(Number(e.target.value));
-                    setCurrentTime(0); // 切换集数时重置播放时间
+            </div>
+
+            {/* 当前区域的章节/集数列表 */}
+            <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+              {getCurrentRegionList().map((item) => (
+                <button
+                  key={item}
+                  onClick={() => {
+                    if (media.type === '小说') {
+                      setCurrentChapter(item);
+                    } else {
+                      setCurrentEpisode(item);
+                      setCurrentTime(0);
+                    }
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                    (media.type === '小说' && currentChapter === item) ||
+                    (media.type !== '小说' && currentEpisode === item)
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
-                  {Array.from({ length: totalEpisodes }, (_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      第 {i + 1} 集
-                    </option>
-                  ))}
-                </select>
-                <div className="text-gray-600 text-sm">
-                  共 {totalEpisodes} 集
-                </div>
-              </div>
-            )}
+                  {media.type === '小说' ? `第${item}章` : `第${item}集`}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* 播放/阅读区域 */}
@@ -248,14 +295,24 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                   </h2>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setCurrentChapter(Math.max(1, currentChapter - 1))}
+                      onClick={() => {
+                        const newChapter = Math.max(1, currentChapter - 1);
+                        setCurrentChapter(newChapter);
+                        const region = chapterRegions.find(r => newChapter >= r.start && newChapter <= r.end);
+                        if (region) setSelectedRegion(region.id);
+                      }}
                       disabled={currentChapter <= 1}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       上一章
                     </button>
                     <button
-                      onClick={() => setCurrentChapter(Math.min(totalChapters, currentChapter + 1))}
+                      onClick={() => {
+                        const newChapter = Math.min(totalChapters, currentChapter + 1);
+                        setCurrentChapter(newChapter);
+                        const region = chapterRegions.find(r => newChapter >= r.start && newChapter <= r.end);
+                        if (region) setSelectedRegion(region.id);
+                      }}
                       disabled={currentChapter >= totalChapters}
                       className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -286,6 +343,51 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
                     </svg>
                     <p className="text-xl mb-2">视频播放器</p>
                     <p className="text-gray-400">第 {currentEpisode} 集 · 当前播放时间: {Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')}</p>
+                  </div>
+                </div>
+
+                {/* 投屏按钮（视频播放界面） */}
+                <button
+                  onClick={handleCast}
+                  className={`absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                    isCasting
+                      ? 'bg-green-500 text-white'
+                      : 'bg-black/50 text-white hover:bg-black/70'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {isCasting ? '投屏中...' : '投屏'}
+                </button>
+
+                {/* 倍速选择按钮 */}
+                <div className="absolute top-4 left-4">
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                      className="px-4 py-2 bg-black/50 text-white rounded-lg hover:bg-black/70 transition-colors"
+                    >
+                      {playbackSpeed}x
+                    </button>
+                    {showSpeedMenu && (
+                      <div className="absolute top-full left-0 mt-2 bg-black/90 text-white rounded-lg overflow-hidden z-10">
+                        {speedOptions.map((speed) => (
+                          <button
+                            key={speed}
+                            onClick={() => {
+                              setPlaybackSpeed(speed);
+                              setShowSpeedMenu(false);
+                            }}
+                            className={`block w-full px-4 py-2 text-left hover:bg-black/70 transition-colors ${
+                              speed === playbackSpeed ? 'bg-purple-600' : ''
+                            }`}
+                          >
+                            {speed}x
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
