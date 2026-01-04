@@ -1,12 +1,6 @@
 {
   "framework": "nextjs",
   "regions": ["hkg1"],
-  "buildCommand": "pnpm build",
-  "installCommand": "pnpm install",
-  "env": {
-    "PNPM_VERSION": "8.15.0",
-    "NODE_VERSION": "18.20.0"
-  },
   "headers": [
     {
       "source": "/(.*)",

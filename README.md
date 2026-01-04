@@ -24,32 +24,55 @@
 ### 环境要求
 
 - Node.js 18.17 或更高版本
-- pnpm 8.0 或更高版本
 
 ### 安装依赖
 
+使用 pnpm（推荐）：
 ```bash
 pnpm install
 ```
 
+或使用 npm：
+```bash
+npm install
+```
+
 ### 启动开发服务器
 
+使用 pnpm：
 ```bash
 pnpm dev
+```
+
+或使用 npm：
+```bash
+npm run dev
 ```
 
 访问 [http://localhost:5000](http://localhost:5000) 查看网站。
 
 ### 构建生产版本
 
+使用 pnpm：
 ```bash
 pnpm build
 ```
 
+或使用 npm：
+```bash
+npm run build
+```
+
 ### 启动生产服务器
 
+使用 pnpm：
 ```bash
 pnpm start
+```
+
+或使用 npm：
+```bash
+npm start
 ```
 
 ## Vercel 部署
@@ -68,9 +91,9 @@ pnpm start
 
 3. **配置项目**
    - **Framework Preset**: Next.js（自动检测）
-   - **Build Command**: `pnpm build`（自动填充）
+   - **Build Command**: `npm run build`（自动填充）
    - **Output Directory**: `.next`（自动填充）
-   - **Install Command**: `pnpm install`（如果需要，可以手动设置）
+   - **Install Command**: `npm install`（自动填充）
 
 4. **环境变量**（如果需要）
    - 在项目设置中添加所需的环境变量
@@ -155,7 +178,7 @@ A: 检查以下几点：
 ### Q: 构建失败怎么办？
 
 A: 常见原因：
-- TypeScript 类型错误：运行 `pnpm build` 本地测试
+- TypeScript 类型错误：运行 `npm run build` 本地测试
 - 依赖版本冲突：检查 `package.json` 中的版本
 - 内存不足：升级 Vercel 账户或优化构建
 

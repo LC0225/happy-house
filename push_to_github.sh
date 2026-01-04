@@ -24,12 +24,12 @@ if [ -n "$(git status --porcelain)" ]; then
     git add .
 
     # 提交
-    git commit -m "fix: 修复 Vercel 部署 pnpm 错误
+    git commit -m "fix: 切换到 npm 解决 Vercel 部署问题
 
-- 添加 .nvmrc 指定 Node.js 18.20.0
-- 在 vercel.json 中添加环境变量配置
-- 指定 pnpm 8.15.0 版本
-- 本地测试通过"
+- 移除 packageManager 字段，改用 npm
+- 简化 vercel.json 配置
+- 删除 .npmrc 和 pnpm-lock.yaml
+- Vercel 将使用默认 npm 安装依赖"
 
     echo "✓ 代码已提交"
 else
