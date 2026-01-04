@@ -1,0 +1,51 @@
+# Vercel部署指南
+
+## 步骤1：创建GitHub仓库
+1. 访问 https://github.com/new
+2. 创建新仓库（例如：happy-house-media）
+3. 不要初始化README或.gitignore
+
+## 步骤2：连接并推送代码
+
+### 替换以下命令中的YOUR_USERNAME和YOUR_REPO为你的实际信息：
+
+# 添加远程仓库（将下面的URL替换为你的仓库地址）
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+
+# 设置主分支
+git branch -M main
+
+# 推送代码到GitHub
+git push -u origin main
+
+## 步骤3：在Vercel部署
+
+1. 访问 https://vercel.com/signup 注册账号
+2. 使用GitHub账号登录（推荐）
+3. 点击"Add New..." → "Project"
+4. 选择你的GitHub仓库并点击"Import"
+5. 确认配置（Vercel会自动识别Next.js）：
+   - Framework Preset: Next.js
+   - Build Command: npm run build
+   - Output Directory: .next
+6. 点击"Deploy"开始部署
+7. 等待2-3分钟，部署完成后会获得一个域名
+
+## 步骤4：访问你的网站
+
+部署成功后，Vercel会提供一个域名，如：
+https://your-project-name.vercel.app
+
+## 常见问题
+
+### 如果构建失败
+1. 检查package.json中的scripts
+2. 确保依赖版本兼容
+3. 查看Vercel构建日志
+
+### 环境变量（如果需要）
+在Vercel项目设置中添加环境变量，然后重新部署
+
+### 自定义域名
+1. 在Vercel项目设置中添加你的域名
+2. 按提示配置DNS记录
