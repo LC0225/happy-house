@@ -2,7 +2,7 @@
 
 import { MediaContent } from '@/types/media';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface MediaCardProps {
   media: MediaContent;
@@ -12,6 +12,12 @@ interface MediaCardProps {
 
 export default function MediaCard({ media, isFavorite = false, onFavoriteToggle }: MediaCardProps) {
   const [favorite, setFavorite] = useState(isFavorite);
+  const [mounted, setMounted] = useState(false);
+
+  // 确保只在客户端加载收藏状态
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -72,7 +78,7 @@ export default function MediaCard({ media, isFavorite = false, onFavoriteToggle 
             className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center transition-all backdrop-blur-sm"
           >
             <svg
-              className={`w-5 h-5 ${favorite ? 'fill-red-500 text-red-500' : 'fill-none text-white'} transition-colors`}
+              className={`w-5 h-5 ${mounted && favorite ? 'fill-red-500 text-red-500' : 'fill-none text-white'} transition-colors`}
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2}
