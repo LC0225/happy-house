@@ -4,7 +4,7 @@ import { mockMediaData, mockUserData } from '@/data/mockData';
 import { MediaContent, MediaType, WatchHistory, Bookmark } from '@/types/media';
 import { use } from 'react';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 export default function PlayPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -48,8 +48,8 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
     return regions;
   };
 
-  const chapterRegions = generateRegions(totalChapters, 100);
-  const episodeRegions = generateRegions(totalEpisodes, 10);
+  const chapterRegions = useMemo(() => generateRegions(totalChapters, 100), [totalChapters]);
+  const episodeRegions = useMemo(() => generateRegions(totalEpisodes, 10), [totalEpisodes]);
 
   // 自动保存进度
   useEffect(() => {
