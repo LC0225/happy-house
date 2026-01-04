@@ -1,0 +1,350 @@
+'use client';
+
+import { mockMediaData, mockUserData } from '@/data/mockData';
+import { MediaContent, MediaType, WatchHistory, Bookmark } from '@/types/media';
+import { use } from 'react';
+import Link from 'next/link';
+import { useState, useEffect } from 'react';
+
+export default function PlayPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const media = mockMediaData.find(item => item.id === resolvedParams.id);
+
+  const [currentChapter, setCurrentChapter] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [isCasting, setIsCasting] = useState(false);
+  const [showBookmarkModal, setShowBookmarkModal] = useState(false);
+  const [bookmarkNote, setBookmarkNote] = useState('');
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+
+  // 加载观看历史
+  useEffect(() => {
+    if (!media) return;
+
+    const watchHistory = mockUserData.watchHistory.find(h => h.mediaId === media.id);
+    if (watchHistory) {
+      if (media.type === '小说') {
+        // 小说：加载上次阅读的章节
+        const mediaBookmark = mockUserData.bookmarks.find(b => b.mediaId === media.id);
+        if (mediaBookmark && mediaBookmark.chapter) {
+          setCurrentChapter(mediaBookmark.chapter);
+        }
+      } else {
+        // 视频：加载上次播放时间
+        setCurrentTime(watchHistory.progress);
+      }
+    }
+
+    // 加载书签
+    const mediaBookmarks = mockUserData.bookmarks.filter(b => b.mediaId === media.id);
+    setBookmarks(mediaBookmarks);
+  }, [media]);
+
+  // 保存观看进度
+  const saveProgress = () => {
+    if (!media) return;
+
+    // 在实际应用中，这里应该调用 API 保存到后端
+    console.log('保存观看进度:', {
+      mediaId: media.id,
+      type: media.type,
+      progress: media.type === '小说' ? currentChapter : currentTime
+    });
+  };
+
+  // 添加书签
+  const handleAddBookmark = () => {
+    if (!media) return;
+
+    const newBookmark: Bookmark = {
+      mediaId: media.id,
+      chapter: media.type === '小说' ? currentChapter : undefined,
+      timestamp: media.type !== '小说' ? currentTime : undefined,
+      note: bookmarkNote,
+      createTime: new Date().toISOString()
+    };
+
+    setBookmarks([...bookmarks, newBookmark]);
+    setBookmarkNote('');
+    setShowBookmarkModal(false);
+
+    // 在实际应用中，这里应该调用 API 保存到后端
+    console.log('添加书签:', newBookmark);
+  };
+
+  // 跳转到书签
+  const jumpToBookmark = (bookmark: Bookmark) => {
+    if (bookmark.chapter) {
+      setCurrentChapter(bookmark.chapter);
+    }
+    if (bookmark.timestamp) {
+      setCurrentTime(bookmark.timestamp);
+    }
+  };
+
+  // 投屏功能
+  const handleCast = () => {
+    if (typeof window !== 'undefined' && (window as any).presentation) {
+      // 使用 Presentation API 投屏
+      (window as any).presentation.defaultRequest?.start();
+    } else {
+      // 模拟投屏
+      setIsCasting(true);
+      setTimeout(() => setIsCasting(false), 3000);
+      alert('投屏功能已启动（演示模式）');
+    }
+  };
+
+  if (!media) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">内容不存在</h1>
+          <Link href="/" className="text-purple-600 hover:text-purple-800">
+            返回首页
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case '小说':
+        return 'bg-blue-500';
+      case '动漫':
+        return 'bg-pink-500';
+      case '电视剧':
+        return 'bg-purple-500';
+      case '综艺':
+        return 'bg-green-500';
+      case '短剧':
+        return 'bg-orange-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* 头部 */}
+      <header className="bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link href={`/detail/${media.id}`} className="text-purple-100 hover:text-white transition-colors">
+              ← 返回详情
+            </Link>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleCast}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  isCasting
+                    ? 'bg-green-500 text-white'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                {isCasting ? '投屏中...' : '投屏'}
+              </button>
+              <button
+                onClick={() => setShowBookmarkModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                添加书签
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* 主内容 */}
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto">
+          {/* 标题和信息 */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <span className={`${getTypeColor(media.type)} text-white px-3 py-1 rounded-full text-sm font-medium`}>
+                {media.type}
+              </span>
+              <span className="text-gray-600 text-lg">
+                {media.year}年 · {media.country}
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800">{media.title}</h1>
+          </div>
+
+          {/* 播放/阅读区域 */}
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+            {media.type === '小说' ? (
+              // 小说阅读界面
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-4 pb-4 border-b">
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    第 {currentChapter} 章
+                  </h2>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentChapter(Math.max(1, currentChapter - 1))}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      上一章
+                    </button>
+                    <button
+                      onClick={() => setCurrentChapter(currentChapter + 1)}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      下一章
+                    </button>
+                  </div>
+                </div>
+                <div className="prose prose-lg max-w-none">
+                  <p className="text-gray-700 leading-relaxed mb-4">
+                    这是第 {currentChapter} 章的内容。在实际应用中，这里会显示小说的正文内容。
+                  </p>
+                  <p className="text-gray-700 leading-relaxed mb-4">
+                    小说阅读界面支持章节切换、书签功能、阅读进度保存等功能。
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    当用户退出后再次打开时，会自动跳转到上次阅读的章节，实现断点续读。
+                  </p>
+                </div>
+              </div>
+            ) : (
+              // 视频播放界面
+              <div className="relative bg-black aspect-video">
+                {/* 模拟视频播放器 */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-white text-center">
+                    <svg className="w-24 h-24 mx-auto mb-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-xl mb-2">视频播放器</p>
+                    <p className="text-gray-400">当前播放时间: {Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')}</p>
+                  </div>
+                </div>
+
+                {/* 播放控制栏 */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                  <div className="flex items-center gap-4">
+                    <button className="text-white">
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    <div className="flex-1 bg-gray-600 h-2 rounded-full">
+                      <div
+                        className="bg-purple-600 h-2 rounded-full transition-all"
+                        style={{ width: `${(currentTime / 3600) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-white text-sm">
+                      {Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')} / 60:00
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 书签列表 */}
+          {bookmarks.length > 0 && (
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                书签 ({bookmarks.length})
+              </h3>
+              <div className="space-y-3">
+                {bookmarks.map((bookmark, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                    onClick={() => jumpToBookmark(bookmark)}
+                  >
+                    <div>
+                      <div className="font-medium text-gray-800">
+                        {bookmark.chapter ? `第 ${bookmark.chapter} 章` : `${Math.floor((bookmark.timestamp || 0) / 60)}:${((bookmark.timestamp || 0) % 60).toString().padStart(2, '0')}`}
+                      </div>
+                      {bookmark.note && (
+                        <div className="text-sm text-gray-600 mt-1">{bookmark.note}</div>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBookmarks(bookmarks.filter((_, i) => i !== index));
+                      }}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      删除
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 操作按钮 */}
+          <div className="flex gap-4">
+            <button
+              onClick={saveProgress}
+              className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+            >
+              保存进度
+            </button>
+            <Link
+              href="/"
+              className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors text-center"
+            >
+              返回首页
+            </Link>
+          </div>
+        </div>
+      </main>
+
+      {/* 添加书签弹窗 */}
+      {showBookmarkModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">添加书签</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                备注（可选）
+              </label>
+              <textarea
+                value={bookmarkNote}
+                onChange={(e) => setBookmarkNote(e.target.value)}
+                placeholder="给这个书签添加备注..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                rows={3}
+              />
+            </div>
+            <div className="mb-4 text-sm text-gray-600">
+              当前位置: {media.type === '小说' ? `第 ${currentChapter} 章` : `${Math.floor(currentTime / 60)}:${(currentTime % 60).toString().padStart(2, '0')}`}
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={handleAddBookmark}
+                className="flex-1 px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+              >
+                添加
+              </button>
+              <button
+                onClick={() => {
+                  setShowBookmarkModal(false);
+                  setBookmarkNote('');
+                }}
+                className="flex-1 px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

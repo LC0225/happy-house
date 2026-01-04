@@ -137,9 +137,12 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
 
               {/* 操作按钮 */}
               <div className="flex gap-4">
-                <button className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
-                  立即观看
-                </button>
+                <Link
+                  href={`/play/${media.id}`}
+                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-center"
+                >
+                  {media.type === '小说' ? '立即阅读' : '立即观看'}
+                </Link>
                 <button className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors">
                   加入收藏
                 </button>

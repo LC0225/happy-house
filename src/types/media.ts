@@ -28,7 +28,16 @@ export interface WatchHistory {
   progress: number; // 0-100, percentage watched
 }
 
+export interface Bookmark {
+  mediaId: string;
+  chapter?: number; // 章节号（针对小说）
+  timestamp?: number; // 时间戳（针对视频）
+  note?: string; // 备注
+  createTime: string; // ISO timestamp
+}
+
 export interface UserData {
   favorites: string[]; // media IDs
   watchHistory: WatchHistory[];
+  bookmarks: Bookmark[];
 }

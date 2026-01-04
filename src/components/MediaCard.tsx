@@ -2,12 +2,26 @@
 
 import { MediaContent } from '@/types/media';
 import Link from 'next/link';
+import { useState } from 'react';
 
 interface MediaCardProps {
   media: MediaContent;
+  isFavorite?: boolean;
+  onFavoriteToggle?: (id: string) => void;
 }
 
-export default function MediaCard({ media }: MediaCardProps) {
+export default function MediaCard({ media, isFavorite = false, onFavoriteToggle }: MediaCardProps) {
+  const [favorite, setFavorite] = useState(isFavorite);
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newFavorite = !favorite;
+    setFavorite(newFavorite);
+    if (onFavoriteToggle) {
+      onFavoriteToggle(media.id);
+    }
+  };
   const getTypeColor = (type: string) => {
     switch (type) {
       case '小说':
@@ -52,8 +66,26 @@ export default function MediaCard({ media }: MediaCardProps) {
           <div className={`absolute top-2 left-2 ${getTypeColor(media.type)} text-white px-3 py-1 rounded-full text-sm font-medium`}>
             {media.type}
           </div>
+          {/* 收藏心形图标 */}
+          <button
+            onClick={handleFavoriteClick}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center transition-all backdrop-blur-sm"
+          >
+            <svg
+              className={`w-5 h-5 ${favorite ? 'fill-red-500 text-red-500' : 'fill-none text-white'} transition-colors`}
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              />
+            </svg>
+          </button>
           {/* 状态标签 */}
-          <div className={`absolute top-2 right-2 px-2 py-1 rounded text-xs font-medium ${getStatusColor(media.status)}`}>
+          <div className={`absolute bottom-2 right-2 px-2 py-1 rounded text-xs font-medium ${getStatusColor(media.status)}`}>
             {media.status}
           </div>
         </div>

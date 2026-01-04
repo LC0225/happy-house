@@ -2,7 +2,7 @@
 
 import { MediaContent, MediaType, WatchHistory } from '@/types/media';
 import { mockMediaData, mockUserData } from '@/data/mockData';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import MediaCard from '@/components/MediaCard';
 import Link from 'next/link';
 
@@ -10,10 +10,19 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'favorites' | 'history'>('favorites');
   const [selectedType, setSelectedType] = useState<MediaType | '全部'>('全部');
 
+  // 从 localStorage 加载收藏状态
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('favorites');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    }
+    return new Set();
+  });
+
   // 获取收藏的媒体
   const favorites = useMemo(() => {
-    return mockMediaData.filter(media => mockUserData.favorites.includes(media.id));
-  }, []);
+    return mockMediaData.filter(media => favoriteIds.has(media.id));
+  }, [favoriteIds]);
 
   // 获取观看历史的媒体（按时间倒序）
   const watchHistory = useMemo(() => {
@@ -123,12 +132,42 @@ export default function ProfilePage() {
         {/* 内容展示 */}
         {activeTab === 'favorites' ? (
           <>
-            {filterByType(favorites, selectedType).length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {filterByType(favorites, selectedType).map(media => (
-                  <MediaCard key={media.id} media={media} />
-                ))}
-              </div>
+            {favorites.length > 0 ? (
+              <>
+                {/* 按类型分组显示收藏 */}
+                {(selectedType === '全部' ? ['小说', '动漫', '电视剧', '综艺', '短剧'] as MediaType[] : [selectedType as MediaType]).map(type => {
+                  const typeFavorites = favorites.filter(f => f.type === type);
+                  if (typeFavorites.length === 0) return null;
+
+                  return (
+                    <div key={type} className="mb-8">
+                      <div className="flex items-center gap-2 mb-4">
+                        <h3 className="text-xl font-bold text-gray-800">{type}</h3>
+                        <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                          {typeFavorites.length} 部
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                        {typeFavorites.map(media => (
+                          <MediaCard
+                            key={media.id}
+                            media={media}
+                            isFavorite
+                            onFavoriteToggle={(id) => {
+                              setFavoriteIds(prev => {
+                                const newFavorites = new Set(prev);
+                                newFavorites.delete(id);
+                                localStorage.setItem('favorites', JSON.stringify([...newFavorites]));
+                                return newFavorites;
+                              });
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
             ) : (
               <div className="text-center py-16">
                 <p className="text-gray-500 text-xl">暂无收藏内容</p>
@@ -256,9 +295,17 @@ function WatchHistoryCard({ media }: { media: any }) {
             </div>
           </div>
 
-          {/* 时间 */}
-          <div className="text-sm text-gray-400 mt-3">
-            观看于 {formatDate(media.watchTime)}
+          {/* 底部操作栏 */}
+          <div className="flex items-center justify-between mt-3">
+            <div className="text-sm text-gray-400">
+              观看于 {formatDate(media.watchTime)}
+            </div>
+            <Link
+              href={`/play/${media.id}`}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+            >
+              继续观看
+            </Link>
           </div>
         </div>
       </div>

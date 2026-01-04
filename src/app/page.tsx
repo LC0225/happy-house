@@ -28,6 +28,30 @@ export default function Home() {
 
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // 从 localStorage 加载收藏状态
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('favorites');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    }
+    return new Set();
+  });
+
+  // 切换收藏并保存到 localStorage
+  const handleToggleFavorite = (id: string) => {
+    setFavorites(prev => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(id)) {
+        newFavorites.delete(id);
+      } else {
+        newFavorites.add(id);
+      }
+      // 保存到 localStorage
+      localStorage.setItem('favorites', JSON.stringify([...newFavorites]));
+      return newFavorites;
+    });
+  };
+
   // 根据选择的类型获取对应的分类和标签
   const currentGenres = selectedType === '全部' ? ['全部'] : getGenresByType(selectedType);
   const currentTags = selectedType === '全部' ? ['全部'] : getTagsByType(selectedType);
@@ -99,11 +123,22 @@ export default function Home() {
         style={{
           backgroundImage: `
             linear-gradient(rgba(88, 28, 135, 0.85), rgba(37, 99, 235, 0.85)),
-            linear-gradient(90deg, #1e3a5f 0%, #2d4a6f 25%, #1e3a5f 50%, #2d4a6f 75%, #1e3a5f 100%),
-            linear-gradient(180deg, #4c1d95 0%, #2563eb 100%)
+            url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=200&h=300&fit=crop'),
+            url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&h=300&fit=crop'),
+            url('https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&h=300&fit=crop'),
+            url('https://images.unsplash.com/photo-1578632767115-351597cf2477?w=200&h=300&fit=crop'),
+            url('https://images.unsplash.com/photo-1560972550-aba3456b5564?w=200&h=300&fit=crop'),
+            url('https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?w=200&h=300&fit=crop'),
+            url('https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=200&h=300&fit=crop'),
+            url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=200&h=300&fit=crop'),
+            url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&h=300&fit=crop'),
+            url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=200&h=300&fit=crop'),
+            url('https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=200&h=300&fit=crop')
           `,
-          backgroundSize: '100% 100%, 50px 50px, 100% 100%',
-          backgroundPosition: '0 0, 0 0, 0 0'
+          backgroundSize: '100% 100%, 200px 300px',
+          backgroundPosition: '0 0, 0% 0%, 25% 0%, 50% 0%, 75% 0%, 100% 0%, 0% 50%, 25% 50%, 50% 50%, 75% 50%, 100% 50%',
+          backgroundRepeat: 'no-repeat',
+          backgroundBlendMode: 'overlay'
         }}
       >
         <div className="container mx-auto px-4 py-6">
@@ -207,7 +242,12 @@ export default function Home() {
         {filteredData.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {filteredData.map(item => (
-              <MediaCard key={item.id} media={item} />
+              <MediaCard
+                key={item.id}
+                media={item}
+                isFavorite={favorites.has(item.id)}
+                onFavoriteToggle={handleToggleFavorite}
+              />
             ))}
           </div>
         ) : (
