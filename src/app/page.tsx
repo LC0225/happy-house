@@ -131,7 +131,7 @@ export default function Home() {
       const matchSearch = !searchQuery ||
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        item.tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
       return matchCountry && matchYear && matchGenre && matchTag && matchSearch;
     });
