@@ -219,6 +219,15 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
                       console.log('=== 开始阅读点击 ===');
                       console.log('小说 ID:', media.id);
                       console.log('目标 URL:', `/reader/${media.id}/1`);
+                      console.log('mounted 状态:', mounted);
+
+                      if (!router.push || typeof router.push !== 'function') {
+                        console.error('router.push 不可用，尝试使用 window.location');
+                        window.location.href = `/reader/${media.id}/1`;
+                        return;
+                      }
+
+                      console.log('即将使用 router.push 跳转...');
                       router.push(`/reader/${media.id}/1`);
                     }}
                     className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-center cursor-pointer"
@@ -256,7 +265,19 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
                       console.log('小说 ID:', media.id);
                       console.log('目标 URL:', `/reader/${media.id}/${chapter.number}`);
                       console.log('当前 URL:', window.location.href);
-                      console.log('即将跳转...');
+                      console.log('mounted 状态:', mounted);
+                      console.log('router 对象:', router);
+                      console.log('router.push 方法:', typeof router.push);
+
+                      if (!router.push || typeof router.push !== 'function') {
+                        console.error('router.push 不可用，尝试使用 window.location');
+                        alert('跳转方式1');
+                        // 尝试直接使用 window.location
+                        window.location.href = `/reader/${media.id}/${chapter.number}`;
+                        return;
+                      }
+
+                      console.log('即将使用 router.push 跳转...');
                       router.push(`/reader/${media.id}/${chapter.number}`);
                     }}
                     className="px-4 py-3 bg-gray-50 hover:bg-purple-50 text-gray-700 hover:text-purple-700 rounded-lg transition-colors text-sm md:text-base text-center cursor-pointer"
