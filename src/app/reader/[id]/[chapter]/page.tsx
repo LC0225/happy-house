@@ -39,15 +39,25 @@ export default function ReaderPage({ params }: { params: Promise<{ id: string; c
 
   // 从 localStorage 加载小说数据
   useEffect(() => {
+    console.log('=== 阅读器页面调试 ===');
+    console.log('查找的小说 ID:', id);
+    console.log('查找的章节:', chapter);
+
     try {
       const realDataSaved = localStorage.getItem('realMediaData');
       const realData = realDataSaved ? JSON.parse(realDataSaved) : [];
 
+      console.log('localStorage 中的数据数量:', realData.length);
+      console.log('localStorage 中的小说:', realData.filter((item: MediaContent) => item.type === '小说').map((item: MediaContent) => ({ id: item.id, title: item.title, hasChapters: !!(item.chapters && item.chapters.length > 0) })));
+
       // 先从真实数据中查找
       const foundInReal = realData.find((item: MediaContent) => item.id === id);
+      console.log('在真实数据中找到的小说:', foundInReal);
+
       if (foundInReal) {
         // 如果是小说但没有章节，尝试从 mockData 复制章节
         if (foundInReal.type === '小说' && (!foundInReal.chapters || foundInReal.chapters.length === 0)) {
+          console.log('小说没有章节，尝试从 mockData 继承');
           // 精确匹配
           let mockNovel = mockMediaData.find(m => m.title === foundInReal.title && m.type === '小说');
 
@@ -59,26 +69,35 @@ export default function ReaderPage({ params }: { params: Promise<{ id: string; c
             );
           }
 
+          console.log('匹配到的 mockNovel:', mockNovel?.title);
+
           if (mockNovel && mockNovel.chapters) {
-            setNovel({
+            const novelWithChapters = {
               ...foundInReal,
               chapters: mockNovel.chapters
-            });
+            };
+            console.log('设置的小说（带章节）:', novelWithChapters.title, novelWithChapters.chapters?.length, '章');
+            setNovel(novelWithChapters);
             return;
           }
         }
+        console.log('设置的小说（自带章节）:', foundInReal.title, foundInReal.chapters?.length, '章');
         setNovel(foundInReal);
         return;
       }
 
       // 再从 mockData 中查找
+      console.log('在 mockData 中查找...');
       const foundInMock = mockMediaData.find(item => item.id === id);
+      console.log('在 mockData 中找到的小说:', foundInMock);
+
       if (foundInMock) {
         setNovel(foundInMock);
         return;
       }
 
       // 都没找到
+      console.log('未找到小说数据');
       setNovel(null);
     } catch (error) {
       console.error('Failed to load novel data:', error);
@@ -90,8 +109,13 @@ export default function ReaderPage({ params }: { params: Promise<{ id: string; c
 
   // 查找章节
   const currentChapterNumber = parseInt(chapter);
+  console.log('解析的章节号:', currentChapterNumber, '原始值:', chapter);
+
   const currentChapter = novel?.chapters?.find(ch => ch.number === currentChapterNumber);
   const totalChapters = novel?.chapters?.length || 0;
+
+  console.log('当前章节:', currentChapter);
+  console.log('总章节数:', totalChapters);
 
   // 背景色配置
   const backgroundConfig = useMemo(() => {
@@ -118,7 +142,11 @@ export default function ReaderPage({ params }: { params: Promise<{ id: string; c
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-800 mb-4">内容不存在</h1>
-          <p className="text-gray-600 mb-4">该小说可能已被删除或数据未正确加载</p>
+          <p className="text-gray-600 mb-2">该小说可能已被删除或数据未正确加载</p>
+          <p className="text-gray-500 text-sm mb-4">小说 ID: {id} | 章节: {chapter}</p>
+          <Link href={`/detail/${id}`} className="text-purple-600 hover:text-purple-800 mr-4">
+            返回详情页
+          </Link>
           <Link href="/" className="text-purple-600 hover:text-purple-800">
             返回首页
           </Link>
@@ -132,7 +160,10 @@ export default function ReaderPage({ params }: { params: Promise<{ id: string; c
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-800 mb-4">章节不存在</h1>
-          <p className="text-gray-600 mb-4">该章节可能不存在或小说暂无章节内容</p>
+          <p className="text-gray-600 mb-2">该章节可能不存在或小说暂无章节内容</p>
+          <p className="text-gray-500 text-sm mb-4">
+            小说: {novel.title} | 章节号: {currentChapterNumber} | 总章数: {totalChapters}
+          </p>
           <Link href={`/detail/${id}`} className="text-purple-600 hover:text-purple-800 mr-4">
             返回详情页
           </Link>

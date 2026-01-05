@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { countries, years, getGenresByType, getTagsByType } from '@/data/mockData';
+import { countries, years, getGenresByType, getTagsByType, mockMediaData } from '@/data/mockData';
 import { MediaType, FilterOptions } from '@/types/media';
 import MediaCard from '@/components/MediaCard';
 import FilterBar from '@/components/FilterBar';
