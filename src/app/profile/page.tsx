@@ -5,8 +5,10 @@ import { mockMediaData, mockUserData } from '@/data/mockData';
 import { useState, useMemo, useEffect } from 'react';
 import MediaCard from '@/components/MediaCard';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'favorites' | 'history' | 'data'>('favorites');
   const [selectedType, setSelectedType] = useState<MediaType | '全部'>('全部');
   const [mounted, setMounted] = useState(false);
@@ -595,75 +597,87 @@ function WatchHistoryCard({ media }: { media: any }) {
     }
   };
 
+  const router = useRouter();
+
+  const handleCardClick = () => {
+    router.push(`/detail/${media.id}`);
+  };
+
+  const handleContinueWatching = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 阻止事件冒泡，避免触发卡片的点击事件
+  };
+
   return (
-    <Link href={`/detail/${media.id}`}>
-      <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer flex">
-        {/* 图片区域 */}
-        <div className="relative w-40 flex-shrink-0">
-          <img
-            src={media.image}
-            alt={media.title}
-            className="w-full h-full object-cover"
+    <div
+      onClick={handleCardClick}
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer flex"
+    >
+      {/* 图片区域 */}
+      <div className="relative w-40 flex-shrink-0">
+        <img
+          src={media.image}
+          alt={media.title}
+          className="w-full h-full object-cover"
+        />
+        {/* 进度条 */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200">
+          <div
+            className="h-full bg-purple-600"
+            style={{ width: `${media.progress}%` }}
           />
-          {/* 进度条 */}
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200">
-            <div
-              className="h-full bg-purple-600"
-              style={{ width: `${media.progress}%` }}
-            />
-          </div>
-          {/* 类型标签 */}
-          <div className={`absolute top-2 left-2 ${getTypeColor(media.type)} text-white px-2 py-1 rounded text-xs font-medium`}>
-            {media.type}
-          </div>
         </div>
-
-        {/* 内容信息 */}
-        <div className="flex-1 p-4 flex flex-col justify-between">
-          <div>
-            {/* 标题 */}
-            <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-1">
-              {media.title}
-            </h3>
-
-            {/* 描述 */}
-            <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-              {media.description}
-            </p>
-
-            {/* 进度信息 */}
-            <div className="flex items-center text-sm text-gray-500 mb-2">
-              <span>观看进度: </span>
-              <span className="ml-2 font-semibold text-purple-600">{media.progress}%</span>
-            </div>
-
-            {/* 标签 */}
-            <div className="flex flex-wrap gap-1">
-              {media.genre.slice(0, 3).map((genre: string, index: number) => (
-                <span
-                  key={index}
-                  className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
-                >
-                  {genre}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* 底部操作栏 */}
-          <div className="flex items-center justify-between mt-3">
-            <div className="text-sm text-gray-400">
-              观看于 {formatDate(media.watchTime)}
-            </div>
-            <Link
-              href={`/play/${media.id}`}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-            >
-              继续观看
-            </Link>
-          </div>
+        {/* 类型标签 */}
+        <div className={`absolute top-2 left-2 ${getTypeColor(media.type)} text-white px-2 py-1 rounded text-xs font-medium`}>
+          {media.type}
         </div>
       </div>
-    </Link>
+
+      {/* 内容信息 */}
+      <div className="flex-1 p-4 flex flex-col justify-between">
+        <div>
+          {/* 标题 */}
+          <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-1">
+            {media.title}
+          </h3>
+
+          {/* 描述 */}
+          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+            {media.description}
+          </p>
+
+          {/* 进度信息 */}
+          <div className="flex items-center text-sm text-gray-500 mb-2">
+            <span>观看进度: </span>
+            <span className="ml-2 font-semibold text-purple-600">{media.progress}%</span>
+          </div>
+
+          {/* 标签 */}
+          <div className="flex flex-wrap gap-1">
+            {media.genre.slice(0, 3).map((genre: string, index: number) => (
+              <span
+                key={index}
+                className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
+              >
+                {genre}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* 底部操作栏 */}
+        <div className="flex items-center justify-between mt-3">
+          <div className="text-sm text-gray-400">
+            观看于 {formatDate(media.watchTime)}
+          </div>
+          <Link
+            href={`/play/${media.id}`}
+            onClick={handleContinueWatching}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+          >
+            继续观看
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
