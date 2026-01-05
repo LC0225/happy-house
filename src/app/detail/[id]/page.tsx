@@ -286,11 +286,11 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const getVideoUrl = () => {
     if (!media) return '';
 
-    // 示例视频 URL（用于降级）
-    // 使用公共测试视频源（支持 CORS）
+    // 示例视频 URL（用于降级）- 使用 Google 的公共测试视频源（支持 CORS 且稳定）
     const sampleVideoUrls = [
-      'https://media.w3.org/2010/05/sintel/trailer.mp4',
-      'https://media.w3.org/2010/05/bunny/trailer.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
     ];
 
     // 如果是电影类型，使用 videoUrl
