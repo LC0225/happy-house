@@ -6,6 +6,7 @@ interface CrawlerConfig {
   type: '小说' | '动漫' | '电视剧' | '综艺' | '短剧';
   count?: number;
   sources?: CrawlerSource[]; // 指定使用的数据源，默认使用所有可用源
+  keyword?: string; // 自定义搜索关键词
 }
 
 // 数据源类型
@@ -204,18 +205,18 @@ export class MediaCrawler {
    */
   async crawlFromWeb(config: CrawlerConfig): Promise<CrawlerResult> {
     try {
-      const { type, count = 10 } = config;
+      const { type, count = 10, keyword } = config;
 
-      // 构建搜索关键词
-      const keywords = this.getSearchKeywords(type);
       const results: MediaContent[] = [];
 
-      for (const keyword of keywords) {
+      // 如果提供了自定义关键词，直接使用；否则使用类型关键词
+      const searchKeywords = keyword ? [`${keyword} ${type}`] : [type];
+
+      for (const searchKeyword of searchKeywords) {
         try {
-          // 直接搜索作品类型，避免"推荐"等词导致搜索到评价文章
           const response = await this.searchClient.webSearch(
-            `${keyword}`,
-            Math.ceil(count / keywords.length),
+            searchKeyword,
+            count,
             true
           );
 
@@ -224,7 +225,7 @@ export class MediaCrawler {
             results.push(...mediaItems);
           }
         } catch (error) {
-          console.error(`搜索 ${keyword} 失败:`, error);
+          console.error(`搜索 ${searchKeyword} 失败:`, error);
         }
       }
 

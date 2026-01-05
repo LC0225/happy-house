@@ -29,6 +29,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [mounted, setMounted] = useState(false);
   const [realData, setRealData] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   // 从 localStorage 加载收藏状态和真实数据
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -72,6 +74,79 @@ export default function Home() {
       }
       return newFavorites;
     });
+  };
+
+  // 搜索并爬取数据
+  const handleSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
+    const keyword = searchQuery.trim();
+    if (!keyword) {
+      setSearchError('请输入搜索关键词');
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError(null);
+
+    try {
+      const response = await fetch('/api/crawler/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          keyword,
+          type: selectedType,
+          count: 20,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        // 将搜索结果合并到现有数据中
+        setRealData(prev => {
+          const newData = [...prev];
+          data.data.forEach((item: any) => {
+            // 检查是否已存在（根据标题）
+            const exists = newData.some(
+              existing => existing.title === item.title && existing.type === item.type
+            );
+            if (!exists) {
+              newData.push(item);
+            }
+          });
+
+          // 保存到 localStorage
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('realMediaData', JSON.stringify(newData));
+            } catch (error) {
+              console.error('Failed to save data to localStorage:', error);
+            }
+          }
+
+          return newData;
+        });
+
+        // 自动切换到对应类型（如果搜索的是特定类型）
+        if (selectedType !== '全部' && data.data.length > 0) {
+          // 已在选中类型，无需切换
+        } else if (data.data.length > 0) {
+          // 根据搜索结果的类型自动切换
+          const firstResultType = data.data[0].type;
+          setSelectedType(firstResultType);
+        }
+      } else {
+        setSearchError(data.error || '搜索失败，请重试');
+      }
+    } catch (error) {
+      setSearchError('搜索失败，请检查网络连接');
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   // 根据选择的类型获取对应的分类和标签
@@ -169,13 +244,42 @@ export default function Home() {
       <main className="container mx-auto px-4 py-8">
         {/* 搜索栏 */}
         <div className="mb-8">
-          <input
-            type="text"
-            placeholder="搜索标题、描述或标签..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
+          <form onSubmit={handleSearch} className="flex gap-4">
+            <input
+              type="text"
+              placeholder="搜索作品名称（自动爬取相关内容）..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={isSearching}
+              className="flex-1 px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
+            />
+            <button
+              type="submit"
+              disabled={isSearching}
+              className="px-8 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed transition shadow-lg flex items-center gap-2"
+            >
+              {isSearching ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  搜索中...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  搜索
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* 错误提示 */}
+          {searchError && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              {searchError}
+            </div>
+          )}
 
           {/* 数据状态提示 */}
           <div className="mt-4 flex items-center gap-3">
