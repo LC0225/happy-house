@@ -274,18 +274,6 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
     }
   };
 
-  // 监听全屏状态变化
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
-  }, []);
-
   // 上一章/集
   const prevChapter = currentChapter && currentChapter > 1 ? currentChapter - 1 : null;
   const nextChapter = currentChapter && currentChapter < totalChapters ? currentChapter + 1 : null;
