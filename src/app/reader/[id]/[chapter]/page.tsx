@@ -180,6 +180,9 @@ export default function ReaderPage({ params }: { params: Promise<{ id: string; c
 
   return (
     <div className="min-h-screen transition-colors duration-300" style={{ filter: `brightness(${brightness}%)` }}>
+      {/* 页面标识 - 用于确认是否正确跳转到阅读器页面 */}
+      <div className="fixed top-0 left-0 w-full h-1 bg-purple-600 z-[100]"></div>
+
       {/* 顶部导航 */}
       <header className={`sticky top-0 z-40 ${backgroundConfig.bg} border-b border-gray-200 shadow-sm`}>
         <div className="container mx-auto px-4 py-3">

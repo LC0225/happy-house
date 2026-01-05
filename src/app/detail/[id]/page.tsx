@@ -243,6 +243,15 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
                     key={chapter.id}
                     href={`/reader/${media.id}/${chapter.number}`}
                     className="px-4 py-3 bg-gray-50 hover:bg-purple-50 text-gray-700 hover:text-purple-700 rounded-lg transition-colors text-sm md:text-base text-center"
+                    onClick={(e) => {
+                      console.log('=== 章节点击调试 ===');
+                      console.log('点击的章节:', chapter.title);
+                      console.log('章节 ID:', chapter.id);
+                      console.log('章节号:', chapter.number);
+                      console.log('小说 ID:', media.id);
+                      console.log('目标 URL:', `/reader/${media.id}/${chapter.number}`);
+                      console.log('当前 URL:', window.location.href);
+                    }}
                   >
                     {chapter.title}
                   </Link>
