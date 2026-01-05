@@ -59,15 +59,8 @@ export default function MediaCard({ media, isFavorite = false, onFavoriteToggle 
     }
   };
 
-  const handleClick = () => {
-    console.log('=== MediaCard 点击调试 ===');
-    console.log('点击的媒体 ID:', media.id);
-    console.log('点击的媒体标题:', media.title);
-    console.log('跳转的 URL:', `/detail/${media.id}`);
-  };
-
   return (
-    <Link href={`/detail/${media.id}`} onClick={handleClick}>
+    <Link href={`/detail/${media.id}`}>
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group">
         {/* 图片区域 */}
         <div className="relative aspect-[2/3] overflow-hidden">

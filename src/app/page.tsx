@@ -263,22 +263,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 调试按钮 */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-        <a
-          href="/test-flow"
-          className="px-4 py-2 bg-orange-500 text-white rounded-full shadow-lg hover:bg-orange-600 text-sm"
-        >
-          测试流程
-        </a>
-        <a
-          href="/debug"
-          className="px-4 py-2 bg-yellow-500 text-white rounded-full shadow-lg hover:bg-yellow-600 text-sm"
-        >
-          调试页面
-        </a>
-      </div>
-
       {/* 头部 */}
       <header
         className="text-white shadow-lg relative"
@@ -348,15 +332,10 @@ export default function Home() {
           <div className="mt-4 flex items-center gap-3">
             <span className="text-sm text-gray-600">
               当前共有 <strong>{realData.length}</strong> 部作品
-              {realData.length > 0 && realData[0]?.dataSource && (
-                <span className="ml-2 text-xs text-gray-400">
-                  (来源: {realData[0].dataSource})
-                </span>
-              )}
             </span>
             {searchSource && lastSearchKeyword && (
-              <span className="text-sm text-gray-500">
-                （搜索 "{lastSearchKeyword}" 获取，数据来源: {searchSource === 'fallback' ? '示例数据' : searchSource}）
+              <span className="text-sm text-gray-500 ml-2">
+                （已搜索 "{lastSearchKeyword}"）
               </span>
             )}
             {realData.length === 0 && (
