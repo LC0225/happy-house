@@ -744,26 +744,28 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
         {/* 视频播放界面 */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
           <div ref={videoContainerRef} className="relative bg-black aspect-video">
-            {/* 真实视频播放器 */}
-            <video
-              ref={videoRef}
-              className="w-full h-full"
-              autoPlay
-              controls
-              playsInline
-              poster={media.image || '/images/placeholders/default.jpg'}
-              onTimeUpdate={handleTimeUpdate}
-              onLoadedMetadata={handleLoadedMetadata}
-            >
-              <source
-                src={getVideoUrl()}
-                type="video/mp4"
-              />
-              您的浏览器不支持视频播放。
-            </video>
+            {/* 真实视频播放器 - 只在有视频源时渲染 */}
+            {getVideoUrl() && (
+              <video
+                ref={videoRef}
+                className="w-full h-full"
+                autoPlay
+                controls
+                playsInline
+                poster={media.image || '/images/placeholders/default.jpg'}
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={handleLoadedMetadata}
+              >
+                <source
+                  src={getVideoUrl()}
+                  type="video/mp4"
+                />
+                您的浏览器不支持视频播放。
+              </video>
+            )}
 
             {/* 如果没有视频源，显示提示 */}
-            {(!getVideoUrl() || getVideoUrl() === '') && (
+            {!getVideoUrl() && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/90">
                 <div className="text-white text-center max-w-md px-4">
                   <svg className="w-24 h-24 mx-auto mb-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
