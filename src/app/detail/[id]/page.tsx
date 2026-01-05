@@ -18,8 +18,16 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
       const realDataSaved = localStorage.getItem('realMediaData');
       const realData = realDataSaved ? JSON.parse(realDataSaved) : [];
 
+      console.log('=== 详情页调试信息 ===');
+      console.log('查找的 ID:', resolvedParams.id);
+      console.log('localStorage 中的数据数量:', realData.length);
+      console.log('localStorage 中的所有 ID:', realData.map((item: MediaContent) => item.id));
+
       // 先从真实数据中查找
       const foundInReal = realData.find((item: MediaContent) => item.id === resolvedParams.id);
+
+      console.log('在真实数据中找到的结果:', foundInReal);
+
       if (foundInReal) {
         setMedia(foundInReal);
         return;
@@ -27,6 +35,9 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
 
       // 再从 mockData 中查找
       const foundInMock = mockMediaData.find(item => item.id === resolvedParams.id);
+
+      console.log('在 mockData 中找到的结果:', foundInMock);
+
       if (foundInMock) {
         setMedia(foundInMock);
         return;
@@ -54,12 +65,23 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   if (!media) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center p-8 max-w-md">
+          <div className="text-6xl mb-4">😢</div>
           <h1 className="text-2xl font-bold text-gray-800 mb-4">内容不存在</h1>
-          <p className="text-gray-600 mb-4">该作品可能已被删除或数据未正确加载</p>
-          <Link href="/" className="text-purple-600 hover:text-purple-800">
-            返回首页
-          </Link>
+          <p className="text-gray-600 mb-2">ID: {resolvedParams.id}</p>
+          <p className="text-gray-600 mb-4">
+            该作品可能已被删除或数据未正确加载。
+            <br />
+            请打开浏览器控制台查看调试信息。
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/" className="text-purple-600 hover:text-purple-800">
+              返回首页
+            </Link>
+            <Link href="/debug" className="text-blue-600 hover:text-blue-800">
+              查看调试页面
+            </Link>
+          </div>
         </div>
       </div>
     );

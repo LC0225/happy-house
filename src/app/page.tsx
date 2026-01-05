@@ -116,20 +116,37 @@ export default function Home() {
         setRealData(prev => {
           const newData = [...prev];
 
+          console.log('=== 搜索结果保存调试 ===');
+          console.log('搜索返回的数据:', data.data);
+          console.log('搜索返回的数据数量:', data.data.length);
+
           data.data.forEach((item: any) => {
             // 如果是小说且没有章节内容，尝试从 mockData 继承章节
             let itemWithChapters = item;
             if (item.type === '小说' && (!item.chapters || item.chapters.length === 0)) {
-              const mockNovel = mockMediaData.find(m =>
+              // 精确匹配
+              let mockNovel = mockMediaData.find(m =>
                 m.title === item.title && m.type === '小说'
               );
+
+              // 如果精确匹配失败，尝试模糊匹配（标题包含关系）
+              if (!mockNovel) {
+                mockNovel = mockMediaData.find(m =>
+                  m.type === '小说' &&
+                  (m.title.includes(item.title) || item.title.includes(m.title))
+                );
+              }
+
               if (mockNovel && mockNovel.chapters) {
                 itemWithChapters = {
                   ...item,
                   chapters: mockNovel.chapters
                 };
+                console.log(`为 "${item.title}" 继承了 "${mockNovel.title}" 的章节`);
               }
             }
+
+            console.log('准备保存的项:', itemWithChapters.id, itemWithChapters.title);
 
             // 检查是否已存在（根据 ID）
             const existingIndex = newData.findIndex(existing => existing.id === itemWithChapters.id);
@@ -137,16 +154,21 @@ export default function Home() {
             if (existingIndex >= 0) {
               // 如果 ID 已存在，更新数据
               newData[existingIndex] = itemWithChapters;
+              console.log('更新现有项:', itemWithChapters.id);
             } else {
               // 如果 ID 不存在，添加新数据
               newData.push(itemWithChapters);
+              console.log('添加新项:', itemWithChapters.id);
             }
           });
+
+          console.log('保存后的总数据量:', newData.length);
 
           // 保存到 localStorage
           if (typeof window !== 'undefined') {
             try {
               localStorage.setItem('realMediaData', JSON.stringify(newData));
+              console.log('数据已保存到 localStorage');
             } catch (error) {
               console.error('Failed to save data to localStorage:', error);
             }
@@ -241,6 +263,22 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 调试按钮 */}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+        <a
+          href="/test-flow"
+          className="px-4 py-2 bg-orange-500 text-white rounded-full shadow-lg hover:bg-orange-600 text-sm"
+        >
+          测试流程
+        </a>
+        <a
+          href="/debug"
+          className="px-4 py-2 bg-yellow-500 text-white rounded-full shadow-lg hover:bg-yellow-600 text-sm"
+        >
+          调试页面
+        </a>
+      </div>
+
       {/* 头部 */}
       <header
         className="text-white shadow-lg relative"
@@ -308,7 +346,14 @@ export default function Home() {
 
           {/* 数据状态提示 */}
           <div className="mt-4 flex items-center gap-3">
-            <span className="text-sm text-gray-600">当前共有 <strong>{realData.length}</strong> 部作品</span>
+            <span className="text-sm text-gray-600">
+              当前共有 <strong>{realData.length}</strong> 部作品
+              {realData.length > 0 && realData[0]?.dataSource && (
+                <span className="ml-2 text-xs text-gray-400">
+                  (来源: {realData[0].dataSource})
+                </span>
+              )}
+            </span>
             {searchSource && lastSearchKeyword && (
               <span className="text-sm text-gray-500">
                 （搜索 "{lastSearchKeyword}" 获取，数据来源: {searchSource === 'fallback' ? '示例数据' : searchSource}）
