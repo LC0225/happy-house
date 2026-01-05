@@ -35,6 +35,19 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const [selectedRegion, setSelectedRegion] = useState('1');
   const [videoDuration, setVideoDuration] = useState(0);
 
+  // 当显示播放器时，尝试自动播放视频
+  useEffect(() => {
+    if (showPlayer && videoRef.current) {
+      console.log('[播放器] 显示播放器，尝试播放视频');
+      // 短暂延迟确保 DOM 已更新
+      setTimeout(() => {
+        videoRef.current?.play().catch(err => {
+          console.warn('[播放器] 自动播放失败，需要用户手动点击播放:', err);
+        });
+      }, 100);
+    }
+  }, [showPlayer, currentEpisode]);
+
   // 背景色配置（必须在提前 return 之前调用，以保持 Hooks 顺序一致）
   const backgroundConfig = useMemo(() => {
     const configs = {
@@ -273,9 +286,22 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const getVideoUrl = () => {
     if (!media) return '';
 
+    // 示例视频 URL（用于降级）
+    const sampleVideoUrls = [
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    ];
+
     // 如果是电影类型，使用 videoUrl
     if (media.type === '电影') {
-      return media.videoUrl || '';
+      // 优先使用配置的 videoUrl
+      if (media.videoUrl) {
+        return media.videoUrl;
+      }
+      // 如果没有 videoUrl，使用第一个示例视频作为降级
+      console.warn(`[播放器] 电影 "${media.title}" 没有配置 videoUrl，使用示例视频`);
+      return sampleVideoUrls[0];
     }
 
     // 其他类型（电视剧、动漫等），使用 episodeUrls 中的对应集数
@@ -283,8 +309,9 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
       return media.episodeUrls[currentEpisode];
     }
 
-    // 返回空字符串表示没有视频源
-    return '';
+    // 如果没有配置的集数 URL，使用示例视频作为降级
+    console.warn(`[播放器] 作品 "${media.title}" 第 ${currentEpisode} 集没有配置视频URL，使用示例视频`);
+    return sampleVideoUrls[currentEpisode % sampleVideoUrls.length];
   };
 
   // 处理视频时间更新
@@ -765,12 +792,18 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
               <video
                 ref={videoRef}
                 className="w-full h-full"
-                autoPlay
                 controls
                 playsInline
                 poster={media.image || '/images/placeholders/default.jpg'}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
+                onError={(e) => {
+                  console.error('[播放器] 视频加载失败:', e);
+                  console.error('[播放器] 视频URL:', getVideoUrl());
+                }}
+                onLoadStart={() => {
+                  console.log('[播放器] 视频开始加载，URL:', getVideoUrl());
+                }}
               >
                 <source
                   src={getVideoUrl()}

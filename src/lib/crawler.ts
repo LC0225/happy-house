@@ -301,6 +301,15 @@ export class MediaCrawler {
   private generateFallbackData(type: string, count: number, keyword?: string): CrawlerResult {
     const results: MediaContent[] = [];
 
+    // 示例视频 URL
+    const sampleVideoUrls = [
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+    ];
+
     // 如果有自定义关键词，优先使用关键词生成数据
     if (keyword) {
       console.log(`[Fallback] 使用关键词 "${keyword}" 生成 ${count} 条数据`);
@@ -325,7 +334,7 @@ export class MediaCrawler {
         const suffix = variantSuffixes[i % variantSuffixes.length] || '';
         const title = `${keyword}${suffix}`;
 
-        results.push({
+        const item: MediaContent = {
           id: `${Date.now()}${i}${Math.random().toString(36).substr(2, 6)}`,
           title: title,
           type: type as any,
@@ -338,7 +347,23 @@ export class MediaCrawler {
           tags: ['热门', '推荐', '2024'],
           status: Math.random() > 0.5 ? '完结' as any : '连载中' as any,
           externalUrl: '',
-        });
+        };
+
+        // 根据类型添加视频 URL
+        if (type === '电影') {
+          // 电影使用 videoUrl
+          item.videoUrl = sampleVideoUrls[i % sampleVideoUrls.length];
+        } else if (['电视剧', '动漫', '短剧', '综艺'].includes(type)) {
+          // 其他类型使用 episodeUrls
+          const episodeCount = Math.floor(Math.random() * 10) + 3; // 3-12集
+          const episodeUrls: Record<number, string> = {};
+          for (let j = 1; j <= episodeCount; j++) {
+            episodeUrls[j] = sampleVideoUrls[j % sampleVideoUrls.length];
+          }
+          item.episodeUrls = episodeUrls;
+        }
+
+        results.push(item);
       }
 
       return {
@@ -400,7 +425,7 @@ export class MediaCrawler {
     for (let i = 0; i < Math.min(count, examples.length); i++) {
       const example = examples[i];
 
-      results.push({
+      const item: MediaContent = {
         id: `${Date.now()}${i}${Math.random().toString(36).substr(2, 6)}`,
         title: example.title,
         type: type as any,
@@ -413,7 +438,23 @@ export class MediaCrawler {
         tags: ['热门', '推荐', '2024'],
         status: '完结' as any,
         externalUrl: '',
-      });
+      };
+
+      // 根据类型添加视频 URL
+      if (type === '电影') {
+        // 电影使用 videoUrl
+        item.videoUrl = sampleVideoUrls[i % sampleVideoUrls.length];
+      } else if (['电视剧', '动漫', '短剧', '综艺'].includes(type)) {
+        // 其他类型使用 episodeUrls
+        const episodeCount = Math.floor(Math.random() * 10) + 3; // 3-12集
+        const episodeUrls: Record<number, string> = {};
+        for (let j = 1; j <= episodeCount; j++) {
+          episodeUrls[j] = sampleVideoUrls[j % sampleVideoUrls.length];
+        }
+        item.episodeUrls = episodeUrls;
+      }
+
+      results.push(item);
     }
 
     return {

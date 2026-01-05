@@ -102,7 +102,12 @@ export const mockMediaData: MediaContent[] = [
     description: '嘉宾团队协作完成任务的户外真人秀',
     genre: ['户外', '真人秀'],
     tags: ['国民综艺', '热门', '经典'],
-    status: '完结'
+    status: '完结',
+    episodeUrls: {
+      1: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      2: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    },
+    externalUrl: 'https://www.zjstv.com/'
   },
 
   // 电影
@@ -134,7 +139,12 @@ export const mockMediaData: MediaContent[] = [
     description: '富家总裁与替身新娘的浪漫故事，甜宠虐恋并存',
     genre: ['甜宠', '总裁'],
     tags: ['爆款', '完结', 'VIP'],
-    status: '完结'
+    status: '完结',
+    episodeUrls: {
+      1: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      2: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      3: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    }
   },
 
   // 电影
@@ -149,7 +159,9 @@ export const mockMediaData: MediaContent[] = [
     description: '面对太阳氦闪危机，人类带着地球流浪宇宙的续作',
     genre: ['科幻', '灾难'],
     tags: ['国产', '热门', 'IMAX'],
-    status: '完结'
+    status: '完结',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    externalUrl: 'https://www.bilibili.com/'
   },
   {
     id: '7',
@@ -162,7 +174,9 @@ export const mockMediaData: MediaContent[] = [
     description: '在潘多拉星球上，人类与纳美人的故事',
     genre: ['科幻', '冒险'],
     tags: ['经典', '3D', 'IMAX'],
-    status: '完结'
+    status: '完结',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    externalUrl: 'https://movies.disney.com/avatar'
   },
   {
     id: '8',
@@ -175,7 +189,9 @@ export const mockMediaData: MediaContent[] = [
     description: '千寻在神秘世界中的成长冒险',
     genre: ['动画', '奇幻'],
     tags: ['经典', '获奖作品', '治愈'],
-    status: '完结'
+    status: '完结',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    externalUrl: 'https://www.ghibli.jp/works/chihiro/'
   },
 ];
 
