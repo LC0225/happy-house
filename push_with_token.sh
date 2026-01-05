@@ -5,13 +5,19 @@
 TOKEN=$1
 
 if [ -z "$TOKEN" ]; then
-    echo "错误: 请提供 Personal Access Token"
+    echo "==================================="
+    echo "  错误: 缺少 GitHub Token"
+    echo "==================================="
+    echo ""
     echo "使用方法: ./push_with_token.sh YOUR_TOKEN"
     echo ""
     echo "如何获取 Token:"
     echo "1. 访问: https://github.com/settings/tokens"
     echo "2. 创建新 token，勾选 repo 权限"
     echo "3. 复制 token 并运行: ./push_with_token.sh YOUR_TOKEN"
+    echo ""
+    echo "示例: ./push_with_token.sh ghp_XXXXXXXXXXXXXXXXXXXX"
+    echo ""
     exit 1
 fi
 

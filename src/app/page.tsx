@@ -301,8 +301,9 @@ export default function Home() {
   };
 
   const filteredData = useMemo(() => {
-    // 只使用爬虫爬取的真实数据
-    const dataSource = realData;
+    // 优先使用爬虫爬取的真实数据，如果没有则使用mockData作为示例
+    const dataSource = realData.length > 0 ? realData : mockMediaData;
+
     return dataSource.filter(item => {
       // 首先匹配类型
       if (item.type !== selectedType) return false;
@@ -393,13 +394,29 @@ export default function Home() {
           {/* 数据状态提示 */}
           <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">
-                当前共有 <strong>{realData.length}</strong> 部作品
-              </span>
-              {searchSource && lastSearchKeyword && (
-                <span className="text-sm text-gray-500 ml-2">
-                  （已搜索 "{lastSearchKeyword}"）
-                </span>
+              {realData.length > 0 ? (
+                <>
+                  <span className="text-sm text-gray-600">
+                    当前共有 <strong>{realData.length}</strong> 部作品
+                  </span>
+                  {searchSource && lastSearchKeyword && (
+                    <span className="text-sm text-gray-500 ml-2">
+                      （已搜索 "{lastSearchKeyword}"）
+                    </span>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-yellow-700">
+                    📌 当前显示示例数据（{mockMediaData.length} 部）
+                  </span>
+                  <Link
+                    href="/profile"
+                    className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    使用爬虫获取真实数据 →
+                  </Link>
+                </div>
               )}
             </div>
             {searchQuery && (
@@ -513,19 +530,33 @@ export default function Home() {
           <div className="text-center py-16">
             {realData.length === 0 ? (
               <>
-                <p className="text-gray-500 text-xl mb-4">还没有数据</p>
-                <p className="text-gray-400 mb-6">请先使用爬虫获取作品数据</p>
-                <Link
-                  href="/profile"
-                  className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
-                >
-                  前往个人中心获取数据
-                </Link>
+                <p className="text-gray-500 text-xl mb-4">当前类型暂无示例数据</p>
+                <p className="text-gray-400 mb-6">请尝试其他类型或使用爬虫获取真实数据</p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={() => handleResetFilters()}
+                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                  >
+                    重置筛选条件
+                  </button>
+                  <Link
+                    href="/profile"
+                    className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                  >
+                    使用爬虫获取数据
+                  </Link>
+                </div>
               </>
             ) : (
               <>
                 <p className="text-gray-500 text-xl mb-4">没有找到匹配的内容</p>
-                <p className="text-gray-400">请尝试调整筛选条件或搜索关键词</p>
+                <p className="text-gray-400 mb-6">请尝试调整筛选条件或搜索关键词</p>
+                <button
+                  onClick={handleResetFilters}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                >
+                  重置筛选条件
+                </button>
               </>
             )}
           </div>
