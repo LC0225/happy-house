@@ -61,7 +61,13 @@ export const mockMediaData: MediaContent[] = [
     description: '人类在巨人威胁下的生存抗争，充满震撼与反转',
     genre: ['热血', '悬疑'],
     tags: ['霸权', '经典', '完结'],
-    status: '完结'
+    status: '完结',
+    episodeUrls: {
+      1: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      2: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      3: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    },
+    externalUrl: 'https://www.bilibili.com/'
   },
 
   // 电视剧
@@ -76,7 +82,12 @@ export const mockMediaData: MediaContent[] = [
     description: '七大王国的权力争斗与冰火之歌',
     genre: ['科幻', '历史'],
     tags: ['热门', '史诗', '经典'],
-    status: '完结'
+    status: '完结',
+    episodeUrls: {
+      1: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      2: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    },
+    externalUrl: 'https://www.hbo.com/'
   },
 
   // 综艺
@@ -92,6 +103,23 @@ export const mockMediaData: MediaContent[] = [
     genre: ['户外', '真人秀'],
     tags: ['国民综艺', '热门', '经典'],
     status: '完结'
+  },
+
+  // 电影
+  {
+    id: '6',
+    title: '流浪地球',
+    type: '电影',
+    country: '中国',
+    year: 2019,
+    rating: 7.9,
+    image: '/images/placeholders/movie-1.jpg',
+    description: '太阳即将毁灭，人类在地球表面建造巨大的推进器，寻找新的家园',
+    genre: ['科幻', '灾难'],
+    tags: ['热门', 'IMAX', '中国科幻'],
+    status: '完结',
+    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    externalUrl: 'https://www.bilibili.com/'
   },
 
   // 短剧

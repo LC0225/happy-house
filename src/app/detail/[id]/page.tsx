@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, Settings, X, BookOpen } from 'lucide-react';
 export default function DetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const videoContainerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // 媒体数据状态
   const [media, setMedia] = useState<MediaContent | null>(null);
@@ -32,6 +33,7 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const [isCasting, setIsCasting] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState('1');
+  const [videoDuration, setVideoDuration] = useState(0);
 
   // 模拟集数数据
   const totalEpisodes = 30;
@@ -251,7 +253,51 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
     setShowPlayer(false);
     setCurrentEpisode(1);
     setCurrentTime(0);
+    // 停止视频播放
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
   };
+
+  // 获取当前集的视频URL
+  const getVideoUrl = () => {
+    if (!media) return '';
+
+    // 优先使用 episodeUrls 中的对应集数
+    if (media.episodeUrls && media.episodeUrls[currentEpisode]) {
+      return media.episodeUrls[currentEpisode];
+    }
+
+    // 如果是电影类型，使用 videoUrl
+    if (media.type === '电影' && media.videoUrl) {
+      return media.videoUrl;
+    }
+
+    // 返回空字符串表示没有视频源
+    return '';
+  };
+
+  // 处理视频时间更新
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  // 处理视频元数据加载完成
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setVideoDuration(videoRef.current.duration);
+    }
+  };
+
+  // 改变播放速度
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = playbackSpeed;
+    }
+  }, [playbackSpeed]);
 
   // 全屏切换
   const toggleFullscreen = () => {
@@ -698,46 +744,54 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
         {/* 视频播放界面 */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
           <div ref={videoContainerRef} className="relative bg-black aspect-video">
-            {/* 模拟视频播放器 */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-white text-center max-w-md px-4">
-                <svg className="w-24 h-24 mx-auto mb-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                </svg>
-                <p className="text-2xl font-semibold mb-2">{media.title}</p>
-                <p className="text-gray-400 mb-2">第 {currentEpisode} 集</p>
-                <p className="text-gray-500 text-sm mb-4">
-                  当前播放时间: {Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')}
-                </p>
-                <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 text-yellow-200 text-sm">
-                  <p className="font-semibold mb-1">⚠️ 演示模式</p>
-                  <p className="opacity-90">
-                    这是一个演示版本的视频播放器。在真实环境中，这里会集成真实的视频播放器（如 Video.js、DPlayer 等）和视频源。
-                  </p>
-                  <p className="mt-2 opacity-80 text-xs">
-                    当前演示使用模拟数据，集数和播放进度仅供参考。
-                  </p>
+            {/* 真实视频播放器 */}
+            <video
+              ref={videoRef}
+              className="w-full h-full"
+              autoPlay
+              controls
+              playsInline
+              poster={media.image || '/images/placeholders/default.jpg'}
+              onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={handleLoadedMetadata}
+            >
+              <source
+                src={getVideoUrl()}
+                type="video/mp4"
+              />
+              您的浏览器不支持视频播放。
+            </video>
+
+            {/* 如果没有视频源，显示提示 */}
+            {(!getVideoUrl() || getVideoUrl() === '') && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/90">
+                <div className="text-white text-center max-w-md px-4">
+                  <svg className="w-24 h-24 mx-auto mb-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-2xl font-semibold mb-2">{media.title}</p>
+                  <p className="text-gray-400 mb-2">第 {currentEpisode} 集</p>
+                  <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 text-yellow-200 text-sm">
+                    <p className="font-semibold mb-1">⚠️ 暂无视频源</p>
+                    <p className="opacity-90">
+                      当前内容没有配置视频源。请联系管理员添加视频URL，或使用外部链接观看。
+                    </p>
+                    {media.externalUrl && (
+                      <div className="mt-3">
+                        <a
+                          href={media.externalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white transition-colors"
+                        >
+                          外部观看链接
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* 投屏按钮 */}
-            <button
-              onClick={() => {
-                setIsCasting(!isCasting);
-                setTimeout(() => setIsCasting(false), 3000);
-              }}
-              className={`absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors cursor-pointer ${
-                isCasting
-                  ? 'bg-green-500 text-white'
-                  : 'bg-black/50 text-white hover:bg-black/70'
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              {isCasting ? '投屏中...' : '投屏'}
-            </button>
+            )}
 
             {/* 倍速选择按钮 */}
             <div className="absolute top-4 left-4">
@@ -769,42 +823,7 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
               </div>
             </div>
 
-            {/* 播放控制栏 */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-              <div className="flex items-center gap-4">
-                <button className="text-white">
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                  </svg>
-                </button>
-                <div className="flex-1 bg-gray-600 h-2 rounded-full">
-                  <div
-                    className="bg-purple-600 h-2 rounded-full transition-all"
-                    style={{ width: `${(currentTime / 3600) * 100}%` }}
-                  />
-                </div>
-                <span className="text-white text-sm">
-                  {Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')} / 60:00
-                </span>
-                <button
-                  onClick={toggleFullscreen}
-                  className="text-white hover:text-gray-300 transition-colors cursor-pointer"
-                  title={isFullscreen ? '退出全屏' : '全屏播放'}
-                >
-                  {isFullscreen ? (
-                    // 退出全屏图标
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  ) : (
-                    // 全屏图标
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
+            {/* 播放控制栏 - 移除，使用原生HTML5 video的controls */}
           </div>
         </div>
 

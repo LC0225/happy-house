@@ -307,6 +307,13 @@ export default function Home() {
       // 首先匹配类型
       if (item.type !== selectedType) return false;
 
+      // 如果是小说，必须要有章节内容才显示
+      if (item.type === '小说') {
+        if (!item.chapters || item.chapters.length === 0) {
+          return false;
+        }
+      }
+
       // 然后匹配筛选条件（只对当前类型生效）
       const matchCountry = appliedFilters.country === '全部' || item.country === appliedFilters.country;
       const matchYear = appliedFilters.year === '全部' || item.year.toString() === appliedFilters.year;

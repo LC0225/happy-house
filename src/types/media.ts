@@ -21,6 +21,8 @@ export interface MediaContent {
   status: '完结' | '连载中' | '更新中';
   externalUrl?: string; // 外部网站链接（可选）
   chapters?: Chapter[]; // 小说章节（仅小说类型）
+  videoUrl?: string; // 单个视频URL（适用于电影）
+  episodeUrls?: Record<number, string>; // 各集视频URL（适用于电视剧、动漫等，key为集数）
 }
 
 export interface FilterOptions {
