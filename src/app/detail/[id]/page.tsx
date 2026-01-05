@@ -154,6 +154,13 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
     };
   }, []);
 
+  // 改变播放速度（必须在提前 return 之前调用）
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = playbackSpeed;
+    }
+  }, [playbackSpeed]);
+
   if (!mounted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -291,13 +298,6 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
       setVideoDuration(videoRef.current.duration);
     }
   };
-
-  // 改变播放速度
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = playbackSpeed;
-    }
-  }, [playbackSpeed]);
 
   // 全屏切换
   const toggleFullscreen = () => {
