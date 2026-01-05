@@ -169,31 +169,22 @@ export class MediaCrawler {
 
       for (const keyword of keywords.slice(0, 2)) {
         const response = await this.searchClient.webSearch(
-          `site:douban.com ${keyword}`,
+          `site:douban.com/subject ${keyword}`,
           Math.ceil(count / 2),
           false
         );
 
         if (response.web_items) {
-          const mediaItems = response.web_items.slice(0, Math.ceil(count / 2)).map((item: any): MediaContent => ({
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            title: this.extractTitle(item.title, type),
-            type: type as any,
-            country: '中国',
-            year: this.extractYear(item.snippet),
-            rating: this.extractRating(item.snippet),
-            image: '/images/placeholders/default.jpg',
-            description: this.extractDescription(item.snippet),
-            genre: this.extractGenre(item.snippet, type),
-            tags: ['豆瓣', '国产'],
-            status: '完结' as const,
-            externalUrl: item.url,
-          }));
+          const mediaItems = await this.parseWebResults(response.web_items, type);
+          // 添加豆瓣标签
+          mediaItems.forEach(item => {
+            item.tags = [...item.tags, '豆瓣', '国产'];
+          });
           items.push(...mediaItems);
         }
       }
 
-      return { success: true, data: items };
+      return { success: true, data: items.slice(0, count) };
     } catch (error) {
       console.error('豆瓣爬取失败:', error);
       return { success: false, error: '豆瓣爬取失败' };
@@ -217,7 +208,7 @@ export class MediaCrawler {
           const response = await this.searchClient.webSearch(
             searchKeyword,
             count,
-            true
+            false
           );
 
           if (response.web_items) {
@@ -309,10 +300,23 @@ export class MediaCrawler {
 
     for (const item of items) {
       try {
+        // 检查 URL 是否有效
+        if (!this.isValidUrl(item.url)) {
+          continue;
+        }
+
+        // 从搜索结果中提取标题
+        const title = this.extractTitle(item.title, type);
+
+        // 检查标题是否有效
+        if (!this.isValidTitle(title)) {
+          continue;
+        }
+
         // 从搜索结果中提取信息
         const media: MediaContent = {
           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          title: this.extractTitle(item.title, type),
+          title: title,
           type: type as any,
           country: this.extractCountry(item.snippet),
           year: this.extractYear(item.snippet),
@@ -322,6 +326,7 @@ export class MediaCrawler {
           genre: this.extractGenre(item.snippet, type),
           tags: this.extractTags(item.snippet),
           status: this.extractStatus(item.snippet),
+          externalUrl: item.url,
         };
 
         mediaItems.push(media);
@@ -338,13 +343,109 @@ export class MediaCrawler {
    */
   private extractTitle(title: string, type: string): string {
     // 移除评价类文章的后缀和特殊字符
-    return title
-      .replace(/(推荐|排名|榜单|Top\s*\d+|盘点|评分|豆瓣|知乎|B站|优酷|爱奇艺|腾讯|芒果)/gi, '')
+    let cleanedTitle = title
+      .replace(/推荐|排名|榜单|Top\s*\d+|盘点|评分|豆瓣|知乎|B站|优酷|爱奇艺|腾讯|芒果|优酷|土豆|搜狐/gi, '')
       .replace(/(小说|动漫|电视剧|综艺|短剧)全集/g, '$1') // 保留类型但移除"全集"
       .replace(/\[\d+\]/g, '') // 移除 [1]、[2] 这类标记
+      .replace(/第\d+季/g, '') // 移除"第1季"等
+      .replace(/第\d+期/g, '') // 移除"第1期"等
+      .replace(/第\d+集/g, '') // 移除"第1集"等
       .replace(/[\s\-_|]+/g, ' ')
       .trim()
       .substring(0, 50);
+
+    // 更严格的过滤：移除明显是评价类文章的内容
+    const reviewKeywords = [
+      '排行榜', '十大', '最好看', '推荐', '解析', '盘点', '评分',
+      'Top', '榜单', '经典', '必看', '精品', '全集',
+      '连载', '更新', '最新', '完结', '在线观看', '免费',
+      '高清', '完整', '全集', '未删减', '无删减'
+    ];
+
+    // 如果标题包含这些关键词，尝试提取核心名称
+    for (const keyword of reviewKeywords) {
+      if (cleanedTitle.includes(keyword)) {
+        cleanedTitle = cleanedTitle.replace(keyword, '').trim();
+      }
+    }
+
+    // 移除括号及内容（通常是一些说明文字）
+    cleanedTitle = cleanedTitle.replace(/\([^)]*\)/g, '').replace(/【[^】]*】/g, '').trim();
+
+    // 如果标题太短或者只剩类型名称，返回原标题的核心部分
+    if (cleanedTitle.length < 2 || cleanedTitle === type) {
+      // 尝试从原标题提取第一个分句
+      const parts = title.split(/[,，、\s-_|]/);
+      cleanedTitle = parts[0]?.replace(/推荐|排名|榜单|Top|盘点|评分/gi, '').trim() || title.substring(0, 20);
+    }
+
+    return cleanedTitle.substring(0, 50);
+  }
+
+  /**
+   * 检查 URL 是否为有效作品页面
+   */
+  private isValidUrl(url: string): boolean {
+    if (!url) return false;
+
+    // 豆瓣作品页面的 URL 模式
+    if (url.includes('douban.com')) {
+      // 豆瓣的作品页面通常包含 /subject/
+      if (url.includes('/subject/')) {
+        // 排除评论、榜单、话题等页面
+        if (url.includes('/review') || url.includes('/lists') || url.includes('/topic')) {
+          return false;
+        }
+        return true;
+      }
+      return false;
+    }
+
+    // 其他平台的 URL 过滤
+    const invalidPatterns = [
+      '/review', '/comment', '/list', '/rank', '/topic',
+      '/news', '/article', '/blog'
+    ];
+
+    for (const pattern of invalidPatterns) {
+      if (url.includes(pattern)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * 检查标题是否为有效作品标题（非评论类文章）
+   */
+  private isValidTitle(title: string): boolean {
+    const reviewPatterns = [
+      /^推荐/, /^排名/, /^榜单/, /^Top\s*\d+/, /^盘点/, /^评分/,
+      /推荐$/, /排名$/, /榜单$/, /Top$/, /盘点$/,
+      /排行榜/, /十大/, /最好看/, /解析/, /精品/, /必看/,
+      /全榜单/, /完整版/, /未删减/,
+    ];
+
+    // 检查是否匹配任何评论类模式
+    for (const pattern of reviewPatterns) {
+      if (pattern.test(title)) {
+        return false;
+      }
+    }
+
+    // 检查标题长度是否合理
+    if (title.length < 2 || title.length > 50) {
+      return false;
+    }
+
+    // 检查是否只包含类型名称
+    const types = ['小说', '动漫', '电视剧', '综艺', '短剧'];
+    if (types.includes(title.trim())) {
+      return false;
+    }
+
+    return true;
   }
 
   /**
