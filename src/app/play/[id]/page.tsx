@@ -1,14 +1,56 @@
 'use client';
 
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { use } from 'react';
 import { mockMediaData, mockUserData } from '@/data/mockData';
 import { MediaContent, MediaType, WatchHistory, Bookmark } from '@/types/media';
-import { use } from 'react';
 import Link from 'next/link';
-import { useState, useEffect, useMemo, useRef } from 'react';
 
 export default function PlayPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const media = mockMediaData.find(item => item.id === resolvedParams.id);
+  const [media, setMedia] = useState<MediaContent | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // 从 localStorage 加载真实数据
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const realDataSaved = localStorage.getItem('realMediaData');
+      const realData = realDataSaved ? JSON.parse(realDataSaved) : [];
+
+      console.log('=== 播放器页调试信息 ===');
+      console.log('查找的 ID:', resolvedParams.id);
+      console.log('localStorage 中的数据数量:', realData.length);
+
+      // 先从真实数据中查找
+      const foundInReal = realData.find((item: MediaContent) => item.id === resolvedParams.id);
+
+      console.log('在真实数据中找到的结果:', foundInReal);
+
+      if (foundInReal) {
+        setMedia(foundInReal);
+        return;
+      }
+
+      // 再从 mockData 中查找
+      const foundInMock = mockMediaData.find(item => item.id === resolvedParams.id);
+
+      console.log('在 mockData 中找到的结果:', foundInMock);
+
+      if (foundInMock) {
+        setMedia(foundInMock);
+        return;
+      }
+
+      // 都没找到
+      setMedia(null);
+    } catch (error) {
+      console.error('Failed to load media data:', error);
+      // 降级到只从 mockData 查找
+      const foundInMock = mockMediaData.find(item => item.id === resolvedParams.id);
+      setMedia(foundInMock || null);
+    }
+  }, [resolvedParams.id]);
 
   const [currentChapter, setCurrentChapter] = useState(1);
   const [currentEpisode, setCurrentEpisode] = useState(1);
@@ -158,14 +200,33 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
     }
   };
 
+  if (!mounted) {
+    // 首次渲染时显示加载状态
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
   if (!media) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center p-8 max-w-md">
+          <div className="text-6xl mb-4">😢</div>
           <h1 className="text-2xl font-bold text-gray-800 mb-4">内容不存在</h1>
-          <Link href="/" className="text-purple-600 hover:text-purple-800">
-            返回首页
-          </Link>
+          <p className="text-gray-600 mb-2">ID: {resolvedParams.id}</p>
+          <p className="text-gray-600 mb-4">
+            该作品可能已被删除或数据未正确加载。
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/" className="text-purple-600 hover:text-purple-800">
+              返回首页
+            </Link>
+            <Link href="/debug" className="text-blue-600 hover:text-blue-800">
+              查看调试页面
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -352,12 +413,21 @@ export default function PlayPage({ params }: { params: Promise<{ id: string }> }
               <div className="relative bg-black aspect-video">
                 {/* 模拟视频播放器 */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-white text-center">
+                  <div className="text-white text-center max-w-md px-4">
                     <svg className="w-24 h-24 mx-auto mb-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                     </svg>
-                    <p className="text-xl mb-2">视频播放器</p>
-                    <p className="text-gray-400">第 {currentEpisode} 集 · 当前播放时间: {Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')}</p>
+                    <p className="text-2xl font-semibold mb-2">{media.title}</p>
+                    <p className="text-gray-400 mb-2">第 {currentEpisode} 集</p>
+                    <p className="text-gray-500 text-sm mb-4">
+                      当前播放时间: {Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')}
+                    </p>
+                    <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 text-yellow-200 text-sm">
+                      <p className="font-semibold mb-1">⚠️ 演示模式</p>
+                      <p className="opacity-90">
+                        这是一个演示版本的视频播放器。在真实环境中，这里会集成真实的视频播放器（如 Video.js、DPlayer 等）和视频源。
+                      </p>
+                    </div>
                   </div>
                 </div>
 
