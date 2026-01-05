@@ -63,9 +63,9 @@ export const mockMediaData: MediaContent[] = [
     tags: ['霸权', '经典', '完结'],
     status: '完结',
     episodeUrls: {
-      1: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      2: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      3: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      1: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      2: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
+      3: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
     },
     externalUrl: 'https://www.bilibili.com/'
   },
@@ -84,8 +84,8 @@ export const mockMediaData: MediaContent[] = [
     tags: ['热门', '史诗', '经典'],
     status: '完结',
     episodeUrls: {
-      1: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      2: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      1: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      2: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
     },
     externalUrl: 'https://www.hbo.com/'
   },
@@ -104,8 +104,8 @@ export const mockMediaData: MediaContent[] = [
     tags: ['国民综艺', '热门', '经典'],
     status: '完结',
     episodeUrls: {
-      1: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      2: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      1: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      2: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
     },
     externalUrl: 'https://www.zjstv.com/'
   },
@@ -123,7 +123,7 @@ export const mockMediaData: MediaContent[] = [
     genre: ['科幻', '灾难'],
     tags: ['热门', 'IMAX', '中国科幻'],
     status: '完结',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
     externalUrl: 'https://www.bilibili.com/'
   },
 
@@ -141,9 +141,9 @@ export const mockMediaData: MediaContent[] = [
     tags: ['爆款', '完结', 'VIP'],
     status: '完结',
     episodeUrls: {
-      1: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      2: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      3: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      1: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      2: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
+      3: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
     }
   },
 
@@ -160,7 +160,7 @@ export const mockMediaData: MediaContent[] = [
     genre: ['科幻', '灾难'],
     tags: ['国产', '热门', 'IMAX'],
     status: '完结',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
     externalUrl: 'https://www.bilibili.com/'
   },
   {
@@ -175,7 +175,7 @@ export const mockMediaData: MediaContent[] = [
     genre: ['科幻', '冒险'],
     tags: ['经典', '3D', 'IMAX'],
     status: '完结',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    videoUrl: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
     externalUrl: 'https://movies.disney.com/avatar'
   },
   {
@@ -190,7 +190,7 @@ export const mockMediaData: MediaContent[] = [
     genre: ['动画', '奇幻'],
     tags: ['经典', '获奖作品', '治愈'],
     status: '完结',
-    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
     externalUrl: 'https://www.ghibli.jp/works/chihiro/'
   },
 ];

@@ -303,11 +303,8 @@ export class MediaCrawler {
 
     // 示例视频 URL
     const sampleVideoUrls = [
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+      'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      'https://media.w3.org/2010/05/bunny/trailer.mp4',
     ];
 
     // 如果有自定义关键词，优先使用关键词生成数据

@@ -287,10 +287,10 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
     if (!media) return '';
 
     // 示例视频 URL（用于降级）
+    // 使用公共测试视频源（支持 CORS）
     const sampleVideoUrls = [
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      'https://media.w3.org/2010/05/bunny/trailer.mp4',
     ];
 
     // 如果是电影类型，使用 videoUrl
@@ -794,15 +794,31 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
                 className="w-full h-full"
                 controls
                 playsInline
+                crossOrigin="anonymous"
                 poster={media.image || '/images/placeholders/default.jpg'}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
                 onError={(e) => {
                   console.error('[播放器] 视频加载失败:', e);
                   console.error('[播放器] 视频URL:', getVideoUrl());
+                  console.error('[播放器] 网络状态:', videoRef.current?.networkState);
+                  console.error('[播放器] 错误代码:', videoRef.current?.error?.code);
+                  console.error('[播放器] 错误消息:', videoRef.current?.error?.message);
                 }}
                 onLoadStart={() => {
                   console.log('[播放器] 视频开始加载，URL:', getVideoUrl());
+                }}
+                onWaiting={() => {
+                  console.log('[播放器] 视频缓冲中...');
+                }}
+                onCanPlay={() => {
+                  console.log('[播放器] 视频可以播放');
+                }}
+                onPlay={() => {
+                  console.log('[播放器] 视频开始播放');
+                }}
+                onPause={() => {
+                  console.log('[播放器] 视频暂停');
                 }}
               >
                 <source
