@@ -35,9 +35,6 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const [selectedRegion, setSelectedRegion] = useState('1');
   const [videoDuration, setVideoDuration] = useState(0);
 
-  // 模拟集数数据
-  const totalEpisodes = 30;
-
   // 背景色配置（必须在提前 return 之前调用，以保持 Hooks 顺序一致）
   const backgroundConfig = useMemo(() => {
     const configs = {
@@ -48,6 +45,10 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
     };
     return configs[backgroundColor];
   }, [backgroundColor]);
+
+  // 获取实际的总集数（从 episodeUrls 中获取）
+  const episodeKeys = media?.episodeUrls ? Object.keys(media.episodeUrls).map(Number).sort((a, b) => a - b) : [];
+  const totalEpisodes = episodeKeys.length > 0 ? Math.max(...episodeKeys) : 0;
 
   // 生成区域选项
   const generateRegions = (total: number, regionSize: number) => {
@@ -203,6 +204,7 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   };
 
   const isNovel = media.type === '小说';
+  const isMovie = media.type === '电影';
 
   // 对于小说，如果没有章节，检查 mockData 中是否有对应的章节
   let mediaWithChapters = media;
@@ -271,14 +273,14 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const getVideoUrl = () => {
     if (!media) return '';
 
-    // 优先使用 episodeUrls 中的对应集数
-    if (media.episodeUrls && media.episodeUrls[currentEpisode]) {
-      return media.episodeUrls[currentEpisode];
+    // 如果是电影类型，使用 videoUrl
+    if (media.type === '电影') {
+      return media.videoUrl || '';
     }
 
-    // 如果是电影类型，使用 videoUrl
-    if (media.type === '电影' && media.videoUrl) {
-      return media.videoUrl;
+    // 其他类型（电视剧、动漫等），使用 episodeUrls 中的对应集数
+    if (media.episodeUrls && media.episodeUrls[currentEpisode]) {
+      return media.episodeUrls[currentEpisode];
     }
 
     // 返回空字符串表示没有视频源
@@ -474,8 +476,8 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
             </div>
           )}
 
-          {/* 视频集数列表 */}
-          {!isNovel && (
+          {/* 视频集数列表（电视剧、动漫、短剧、综艺显示集数，电影不显示） */}
+          {!isNovel && !isMovie && totalEpisodes > 0 && episodeRegions.length > 0 && (
             <div className="border-t border-gray-200 p-6 md:p-8">
               <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6">集数列表</h2>
               <div className="mb-4">
@@ -507,6 +509,20 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
                   ));
                 })()}
               </div>
+            </div>
+          )}
+
+          {/* 电影提示 */}
+          {!isNovel && isMovie && (
+            <div className="border-t border-gray-200 p-6 md:p-8 text-center">
+              <p className="text-gray-600">这是一部完整的电影，点击"立即观看"即可开始播放</p>
+            </div>
+          )}
+
+          {/* 没有集数数据的提示（电视剧、动漫等类型但没有集数数据） */}
+          {!isNovel && !isMovie && totalEpisodes === 0 && (
+            <div className="border-t border-gray-200 p-6 md:p-8 text-center">
+              <p className="text-gray-600">该作品的集数数据正在完善中，请稍后再试</p>
             </div>
           )}
         </div>
