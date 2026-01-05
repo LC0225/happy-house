@@ -115,13 +115,31 @@ export default function Home() {
         // 将搜索结果合并到现有数据中
         setRealData(prev => {
           const newData = [...prev];
+
           data.data.forEach((item: any) => {
-            // 检查是否已存在（根据标题）
-            const exists = newData.some(
-              existing => existing.title === item.title && existing.type === item.type
-            );
-            if (!exists) {
-              newData.push(item);
+            // 如果是小说且没有章节内容，尝试从 mockData 继承章节
+            let itemWithChapters = item;
+            if (item.type === '小说' && (!item.chapters || item.chapters.length === 0)) {
+              const mockNovel = mockMediaData.find(m =>
+                m.title === item.title && m.type === '小说'
+              );
+              if (mockNovel && mockNovel.chapters) {
+                itemWithChapters = {
+                  ...item,
+                  chapters: mockNovel.chapters
+                };
+              }
+            }
+
+            // 检查是否已存在（根据 ID）
+            const existingIndex = newData.findIndex(existing => existing.id === itemWithChapters.id);
+
+            if (existingIndex >= 0) {
+              // 如果 ID 已存在，更新数据
+              newData[existingIndex] = itemWithChapters;
+            } else {
+              // 如果 ID 不存在，添加新数据
+              newData.push(itemWithChapters);
             }
           });
 

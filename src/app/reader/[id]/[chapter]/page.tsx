@@ -48,7 +48,17 @@ export default function ReaderPage({ params }: { params: Promise<{ id: string; c
       if (foundInReal) {
         // 如果是小说但没有章节，尝试从 mockData 复制章节
         if (foundInReal.type === '小说' && (!foundInReal.chapters || foundInReal.chapters.length === 0)) {
-          const mockNovel = mockMediaData.find(m => m.title === foundInReal.title && m.type === '小说');
+          // 精确匹配
+          let mockNovel = mockMediaData.find(m => m.title === foundInReal.title && m.type === '小说');
+
+          // 如果精确匹配失败，尝试模糊匹配（标题包含关系）
+          if (!mockNovel) {
+            mockNovel = mockMediaData.find(m =>
+              m.type === '小说' &&
+              (m.title.includes(foundInReal.title) || foundInReal.title.includes(m.title))
+            );
+          }
+
           if (mockNovel && mockNovel.chapters) {
             setNovel({
               ...foundInReal,

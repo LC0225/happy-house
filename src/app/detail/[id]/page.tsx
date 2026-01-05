@@ -87,7 +87,17 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   // 对于小说，如果没有章节，检查 mockData 中是否有对应的章节
   let mediaWithChapters = media;
   if (isNovel && (!media.chapters || media.chapters.length === 0)) {
-    const mockNovel = mockMediaData.find(m => m.title === media.title && m.type === '小说');
+    // 精确匹配
+    let mockNovel = mockMediaData.find(m => m.title === media.title && m.type === '小说');
+
+    // 如果精确匹配失败，尝试模糊匹配（标题包含关系）
+    if (!mockNovel) {
+      mockNovel = mockMediaData.find(m =>
+        m.type === '小说' &&
+        (m.title.includes(media.title) || media.title.includes(m.title))
+      );
+    }
+
     if (mockNovel && mockNovel.chapters) {
       mediaWithChapters = {
         ...media,
