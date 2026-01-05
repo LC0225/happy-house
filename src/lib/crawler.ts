@@ -5,13 +5,18 @@ import { MediaContent } from '@/types/media';
 interface CrawlerConfig {
   type: '小说' | '动漫' | '电视剧' | '综艺' | '短剧';
   count?: number;
+  sources?: CrawlerSource[]; // 指定使用的数据源，默认使用所有可用源
 }
+
+// 数据源类型
+type CrawlerSource = 'web_search' | 'tmdb' | 'douban' | 'custom';
 
 // 爬虫结果
 interface CrawlerResult {
   success: boolean;
   data?: MediaContent[];
   error?: string;
+  source?: string; // 数据来源
 }
 
 export class MediaCrawler {
@@ -23,12 +28,182 @@ export class MediaCrawler {
   }
 
   /**
+   * 多源爬取 - 从多个数据源聚合数据
+   */
+  async crawlMultiSource(config: CrawlerConfig): Promise<CrawlerResult> {
+    const { type, count = 10, sources } = config;
+
+    // 默认使用所有可用数据源
+    const activeSources = sources || this.getAvailableSources(type);
+    const allResults: MediaContent[] = [];
+
+    for (const source of activeSources) {
+      try {
+        console.log(`从数据源 ${source} 爬取 ${type} 数据...`);
+        const result = await this.crawlFromSource(source, type, Math.ceil(count / activeSources.length));
+
+        if (result.success && result.data) {
+          // 标记数据来源
+          const dataWithSource = result.data.map(item => ({
+            ...item,
+            dataSource: source,
+          }));
+          allResults.push(...dataWithSource);
+        }
+      } catch (error) {
+        console.error(`从数据源 ${source} 爬取失败:`, error);
+      }
+    }
+
+    // 去重（基于标题）
+    const uniqueResults = this.deduplicateByTitle(allResults);
+
+    return {
+      success: true,
+      data: uniqueResults.slice(0, count),
+      source: activeSources.join(','),
+    };
+  }
+
+  /**
+   * 从指定数据源爬取
+   */
+  private async crawlFromSource(
+    source: CrawlerSource,
+    type: string,
+    count: number
+  ): Promise<CrawlerResult> {
+    switch (source) {
+      case 'web_search':
+        return this.crawlFromWeb({ type: type as any, count });
+      case 'tmdb':
+        return this.crawlFromTMDb(type, count);
+      case 'douban':
+        return this.crawlFromDouban(type, count);
+      default:
+        return { success: false, error: `不支持的数据源: ${source}` };
+    }
+  }
+
+  /**
+   * 获取可用的数据源
+   */
+  private getAvailableSources(type: string): CrawlerSource[] {
+    // 根据类型返回适合的数据源
+    const typeSourceMap: Record<string, CrawlerSource[]> = {
+      '小说': ['web_search', 'douban'],
+      '动漫': ['web_search', 'tmdb'],
+      '电视剧': ['web_search', 'tmdb', 'douban'],
+      '综艺': ['web_search', 'douban'],
+      '短剧': ['web_search'],
+    };
+
+    return typeSourceMap[type] || ['web_search'];
+  }
+
+  /**
+   * 从 TMDb API 爬取（电影、电视剧、动漫）
+   */
+  private async crawlFromTMDb(type: string, count: number): Promise<CrawlerResult> {
+    try {
+      // TMDb API 配置（需要 API key，这里使用公开的演示端点）
+      const baseUrl = 'https://api.themoviedb.org/3';
+      const apiKey = process.env.TMDB_API_KEY || 'demo'; // 生产环境应使用环境变量
+
+      // 根据类型映射到 TMDb 的分类
+      const tmdbTypeMap: Record<string, { type: string; genre: number }> = {
+        '动漫': { type: 'tv', genre: 16 }, // Animation
+        '电视剧': { type: 'tv', genre: 18 }, // Drama
+      };
+
+      const tmdbConfig = tmdbTypeMap[type];
+      if (!tmdbConfig) {
+        return { success: false, error: `TMDb 不支持该类型: ${type}` };
+      }
+
+      // 调用 TMDb API
+      const response = await fetch(
+        `${baseUrl}/discover/${tmdbConfig.type}?api_key=${apiKey}&with_genres=${tmdbConfig.genre}&language=zh-CN&page=1`
+      );
+
+      if (!response.ok) {
+        throw new Error(`TMDb API 请求失败: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const items: MediaContent[] = data.results.slice(0, count).map((item: any) => ({
+        id: item.id.toString(),
+        title: item.title || item.name,
+        type: type as any,
+        country: '美国', // TMDb 的数据主要是欧美内容
+        year: item.release_date || item.first_air_date ? (item.release_date || item.first_air_date).substring(0, 4) : '2024',
+        rating: item.vote_average,
+        image: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : '/images/placeholders/default.jpg',
+        description: item.overview || '暂无描述',
+        genre: item.genre_ids.slice(0, 2).map((id: number) => this.getGenreName(id)),
+        tags: ['TMDb'],
+        status: item.status || '未知',
+        externalUrl: `https://www.themoviedb.org/${tmdbConfig.type}/${item.id}`,
+      }));
+
+      return { success: true, data: items };
+    } catch (error) {
+      // TMDb API 调用失败时，降级到网络搜索
+      console.error('TMDb API 调用失败，降级到网络搜索:', error);
+      return this.crawlFromWeb({ type: type as any, count });
+    }
+  }
+
+  /**
+   * 从豆瓣 API 爬取（模拟）
+   */
+  private async crawlFromDouban(type: string, count: number): Promise<CrawlerResult> {
+    // 豆瓣 API 需要申请，这里模拟调用
+    // 实际使用时应该配置豆瓣 API key
+    try {
+      const keywords = this.getSearchKeywords(type);
+      const items: MediaContent[] = [];
+
+      for (const keyword of keywords.slice(0, 2)) {
+        const response = await this.searchClient.webSearch(
+          `site:douban.com ${keyword}`,
+          Math.ceil(count / 2),
+          false
+        );
+
+        if (response.web_items) {
+          const mediaItems = response.web_items.slice(0, Math.ceil(count / 2)).map((item: any) => ({
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            title: this.extractTitle(item.title, type),
+            type: type as any,
+            country: '中国',
+            year: this.extractYear(item.snippet),
+            rating: this.extractRating(item.snippet),
+            image: '/images/placeholders/default.jpg',
+            description: this.extractDescription(item.snippet),
+            genre: this.extractGenre(item.snippet, type),
+            tags: ['豆瓣', '国产'],
+            status: '未知',
+            externalUrl: item.url,
+          }));
+          items.push(...mediaItems);
+        }
+      }
+
+      return { success: true, data: items };
+    } catch (error) {
+      console.error('豆瓣爬取失败:', error);
+      return { success: false, error: '豆瓣爬取失败' };
+    }
+  }
+
+  /**
    * 通过网络搜索爬取媒体数据
    */
   async crawlFromWeb(config: CrawlerConfig): Promise<CrawlerResult> {
     try {
       const { type, count = 10 } = config;
-      
+
       // 构建搜索关键词
       const keywords = this.getSearchKeywords(type);
       const results: MediaContent[] = [];
@@ -74,6 +249,51 @@ export class MediaCrawler {
       '短剧': ['热门短剧', '甜宠短剧', '总裁短剧', '短剧推荐'],
     };
     return keywordMap[type] || ['推荐'];
+  }
+
+  /**
+   * 根据 ID 获取类型名称（TMDb）
+   */
+  private getGenreName(id: number): string {
+    const genreMap: Record<number, string> = {
+      16: '动画',
+      18: '剧情',
+      28: '动作',
+      35: '喜剧',
+      80: '犯罪',
+      99: '纪录',
+      10749: '爱情',
+      10751: '家庭',
+      10752: '惊悚',
+      10759: '冒险',
+      10762: '儿童',
+      10763: '新闻',
+      10764: '真人秀',
+      10765: '科幻',
+      10766: '肥皂剧',
+      10767: '谈话',
+      10768: '战争',
+      10769: '西部',
+    };
+    return genreMap[id] || '其他';
+  }
+
+  /**
+   * 根据标题去重
+   */
+  private deduplicateByTitle(items: MediaContent[]): MediaContent[] {
+    const seen = new Set<string>();
+    const result: MediaContent[] = [];
+
+    for (const item of items) {
+      const title = item.title.toLowerCase().trim();
+      if (!seen.has(title)) {
+        seen.add(title);
+        result.push(item);
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -215,19 +435,19 @@ export class MediaCrawler {
   }
 
   /**
-   * 批量爬取所有类型的数据
+   * 批量爬取所有类型的数据 - 使用多源爬取
    */
   async crawlAll(countPerType: number = 10): Promise<Record<string, MediaContent[]>> {
     const types: CrawlerConfig['type'][] = ['小说', '动漫', '电视剧', '综艺', '短剧'];
     const results: Record<string, MediaContent[]> = {};
 
     for (const type of types) {
-      console.log(`开始爬取 ${type} 数据...`);
-      const result = await this.crawlFromWeb({ type, count: countPerType });
-      
+      console.log(`开始爬取 ${type} 数据（多源聚合）...`);
+      const result = await this.crawlMultiSource({ type, count: countPerType });
+
       if (result.success && result.data) {
         results[type] = result.data;
-        console.log(`${type} 爬取完成，获取 ${result.data.length} 条数据`);
+        console.log(`${type} 爬取完成，获取 ${result.data.length} 条数据，来源: ${result.source}`);
       } else {
         console.error(`${type} 爬取失败:`, result.error);
         results[type] = [];

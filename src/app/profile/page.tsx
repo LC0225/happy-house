@@ -7,7 +7,7 @@ import MediaCard from '@/components/MediaCard';
 import Link from 'next/link';
 
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState<'favorites' | 'history'>('favorites');
+  const [activeTab, setActiveTab] = useState<'favorites' | 'history' | 'data'>('favorites');
   const [selectedType, setSelectedType] = useState<MediaType | '全部'>('全部');
   const [mounted, setMounted] = useState(false);
 
@@ -95,7 +95,7 @@ export default function ProfilePage() {
         </div>
 
         {/* 标签页切换 */}
-        <div className="flex gap-4 mb-6">
+        <div className="flex flex-wrap gap-4 mb-6">
           <button
             onClick={() => setActiveTab('favorites')}
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${
@@ -115,6 +115,16 @@ export default function ProfilePage() {
             }`}
           >
             最近观看 ({watchHistory.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('data')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'data'
+                ? 'bg-purple-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-purple-100'
+            }`}
+          >
+            数据管理
           </button>
         </div>
 
@@ -203,6 +213,10 @@ export default function ProfilePage() {
             )}
           </>
         )}
+
+        {/* 数据管理标签页 */}
+        {activeTab === 'data' && <DataManager />}
+      </main>
       </main>
 
       {/* 页脚 */}
@@ -211,6 +225,295 @@ export default function ProfilePage() {
           <p className="text-gray-400">多媒体内容平台 - 发现更多精彩内容</p>
         </div>
       </footer>
+    </div>
+  );
+}
+
+// 数据管理组件
+function DataManager() {
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [count, setCount] = useState(3);
+  const [selectedSources, setSelectedSources] = useState<string[]>(['web_search', 'tmdb', 'douban']);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  const types = [
+    { id: 'all', label: '全部类型' },
+    { id: '小说', label: '小说' },
+    { id: '动漫', label: '动漫' },
+    { id: '电视剧', label: '电视剧' },
+    { id: '综艺', label: '综艺' },
+    { id: '短剧', label: '短剧' },
+  ];
+
+  const sources = [
+    { id: 'web_search', label: '联网搜索', desc: '从公开网页搜索并提取数据' },
+    { id: 'tmdb', label: 'TMDb API', desc: '电影数据库（电影、电视剧、动漫）' },
+    { id: 'douban', label: '豆瓣', desc: '中文影视资料库' },
+  ];
+
+  const startCrawler = async () => {
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const response = await fetch('/api/crawler/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: selectedType,
+          count,
+          sources: selectedSources.length > 0 ? selectedSources : undefined,
+        }),
+      });
+
+      const data = await response.json();
+      setResult(data);
+    } catch (error) {
+      setResult({
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveToLocalStorage = () => {
+    if (!result?.success || !result?.data) return;
+
+    try {
+      // 将所有类型的数据合并为一个数组
+      const allData: any[] = [];
+      Object.entries(result.data).forEach(([type, items]) => {
+        (items as any[]).forEach((item: any) => {
+          allData.push({
+            ...item,
+            type: type,
+          });
+        });
+      });
+
+      // 保存到 localStorage
+      localStorage.setItem('realMediaData', JSON.stringify(allData));
+      alert('数据已保存！可以在首页的"真实数据"选项卡中使用');
+    } catch (error) {
+      alert('保存失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h3 className="text-xl font-bold text-gray-900 mb-6">数据爬取管理</h3>
+
+      {/* 配置表单 */}
+      <div className="space-y-6 mb-8">
+        {/* 类型选择 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            数据类型
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {types.map((type) => (
+              <button
+                key={type.id}
+                onClick={() => setSelectedType(type.id)}
+                className={`px-4 py-3 rounded-lg font-medium transition ${
+                  selectedType === type.id
+                    ? 'bg-purple-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {type.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 数据源选择 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            数据来源（多源聚合）
+          </label>
+          <div className="space-y-2">
+            {sources.map((source) => (
+              <label
+                key={source.id}
+                className="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedSources.includes(source.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedSources([...selectedSources, source.id]);
+                    } else {
+                      setSelectedSources(selectedSources.filter(s => s !== source.id));
+                    }
+                  }}
+                  className="mt-1 mr-3 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <div>
+                  <div className="font-medium text-gray-900">{source.label}</div>
+                  <div className="text-sm text-gray-500">{source.desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* 数量设置 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            每个类型爬取数量（测试模式）
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="20"
+            value={count}
+            onChange={(e) => setCount(Number(e.target.value))}
+            className="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
+          <p className="mt-1 text-sm text-gray-500">
+            建议数量：1-5，测试模式使用少量数据快速验证
+          </p>
+        </div>
+
+        {/* 开始按钮 */}
+        <div className="flex gap-4">
+          <button
+            onClick={startCrawler}
+            disabled={loading}
+            className="px-8 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed transition shadow-lg"
+          >
+            {loading ? '爬取中...' : '开始爬取'}
+          </button>
+
+          {loading && (
+            <div className="flex items-center text-gray-600">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mr-2"></div>
+              正在从网络搜索并提取数据...
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 结果展示 */}
+      {result && (
+        <div className="border-t border-gray-200 pt-6">
+          <h4 className="text-lg font-bold text-gray-900 mb-4">
+            爬取结果
+          </h4>
+
+          {result.success ? (
+            <div className="space-y-6">
+              {/* 汇总信息 */}
+              {result.summary && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h5 className="text-lg font-semibold text-purple-900">
+                      爬取汇总
+                    </h5>
+                    <div className="flex items-center gap-4">
+                      <span className="text-2xl font-bold text-purple-600">
+                        {result.summary.totalCount} 条
+                      </span>
+                      <button
+                        onClick={saveToLocalStorage}
+                        className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition"
+                      >
+                        保存到首页
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                    {Object.entries(result.summary.byType).map(([type, count]) => (
+                      <div key={type} className="text-center">
+                        <div className="text-2xl font-bold text-purple-600">{count}</div>
+                        <div className="text-sm text-gray-600">{type}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 详细数据 */}
+              {result.data && (
+                <div className="space-y-4">
+                  {Object.entries(result.data).map(([type, items]: [string, any]) => (
+                    <div key={type} className="border border-gray-200 rounded-lg p-4">
+                      <h6 className="text-lg font-semibold text-gray-900 mb-3">
+                        {type} ({items.length} 条)
+                      </h6>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {items.slice(0, 3).map((item: any, index: number) => (
+                          <div
+                            key={index}
+                            className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                          >
+                            <div className="font-medium text-gray-900 mb-2">
+                              {item.title}
+                            </div>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <div>评分: {item.rating?.toFixed(1)}</div>
+                              <div>年份: {item.year}</div>
+                              <div>国家: {item.country}</div>
+                            </div>
+                          </div>
+                        ))}
+                        {items.length > 3 && (
+                          <div className="flex items-center justify-center bg-gray-100 rounded-lg text-gray-500">
+                            +{items.length - 3} 更多
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+              <p className="text-sm text-red-800 font-medium">爬取失败</p>
+              <p className="text-sm text-red-700 mt-1">{result.error}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 使用说明 */}
+      <div className="mt-8 bg-gray-50 rounded-lg p-6">
+        <h4 className="text-lg font-bold text-gray-900 mb-4">使用说明</h4>
+        <div className="space-y-4 text-sm text-gray-700">
+          <div>
+            <strong className="font-semibold">数据来源：</strong>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>联网搜索 - 从公开网页获取真实数据</li>
+              <li>智能解析 - 自动提取标题、评分、分类等信息</li>
+              <li>多源聚合 - 支持小说、动漫、电视剧、综艺、短剧</li>
+            </ul>
+          </div>
+          <div>
+            <strong className="font-semibold">存储优化：</strong>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>只存储链接 - 不存储实际视频和图片文件</li>
+              <li>轻量级设计 - 数据库仅保存元数据和 URL</li>
+              <li>测试模式 - 默认少量数据，节省资源</li>
+            </ul>
+          </div>
+          <div>
+            <strong className="font-semibold">注意事项：</strong>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>爬取的数据为演示性质，仅供开发测试使用</li>
+              <li>图片链接为占位符，需要手动替换</li>
+              <li>请勿用于商业用途或大规模数据采集</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

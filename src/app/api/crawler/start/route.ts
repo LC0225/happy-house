@@ -3,12 +3,12 @@ import { MediaCrawler } from '@/lib/crawler';
 
 /**
  * POST /api/crawler/start
- * 启动爬虫任务
+ * 启动爬虫任务 - 支持多源爬取
  */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { type, count = 10 } = body;
+    const { type, count = 10, sources } = body;
 
     if (!type) {
       return NextResponse.json(
@@ -18,11 +18,11 @@ export async function POST(request: Request) {
     }
 
     const crawler = new MediaCrawler();
-    
+
     if (type === 'all') {
       // 爬取所有类型
       const results = await crawler.crawlAll(count);
-      
+
       const totalCount = Object.values(results).reduce(
         (sum, items) => sum + items.length,
         0
@@ -42,8 +42,8 @@ export async function POST(request: Request) {
         },
       });
     } else {
-      // 爬取指定类型
-      const result = await crawler.crawlFromWeb({ type, count });
+      // 使用多源爬取指定类型
+      const result = await crawler.crawlMultiSource({ type, count, sources });
 
       return NextResponse.json(result);
     }
@@ -61,11 +61,18 @@ export async function POST(request: Request) {
 
 /**
  * GET /api/crawler/status
- * 获取爬虫状态（预留）
+ * 获取爬虫状态和可用数据源
  */
 export async function GET() {
   return NextResponse.json({
     status: 'ready',
     availableTypes: ['小说', '动漫', '电视剧', '综艺', '短剧', 'all'],
+    availableSources: ['web_search', 'tmdb', 'douban'],
+    features: {
+      multiSource: true, // 支持多源爬取
+      deduplication: true, // 自动去重
+      testMode: true, // 支持测试模式（少量数据）
+      linkOnly: true, // 只存储链接，不存储实际文件
+    },
   });
 }
