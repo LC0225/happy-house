@@ -217,7 +217,6 @@ export default function ProfilePage() {
         {/* 数据管理标签页 */}
         {activeTab === 'data' && <DataManager />}
       </main>
-      </main>
 
       {/* 页脚 */}
       <footer className="bg-gray-800 text-white py-6 mt-12">
