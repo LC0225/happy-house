@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'favorites' | 'history' | 'data'>('favorites');
+  const [activeTab, setActiveTab] = useState<'favorites' | 'history' | 'data' | 'video-config'>('favorites');
   const [selectedType, setSelectedType] = useState<MediaType>('电影');
   const [mounted, setMounted] = useState(false);
 
@@ -127,6 +127,16 @@ export default function ProfilePage() {
           >
             数据管理
           </button>
+          <button
+            onClick={() => setActiveTab('video-config')}
+            className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'video-config'
+                ? 'bg-purple-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-purple-100'
+            }`}
+          >
+            视频配置
+          </button>
         </div>
 
         {/* 类型筛选 */}
@@ -218,6 +228,7 @@ export default function ProfilePage() {
         )}
 
         {activeTab === 'data' && <DataManager />}
+        {activeTab === 'video-config' && <VideoConfigManager />}
       </main>
 
       {/* 页脚 */}
@@ -671,3 +682,404 @@ function WatchHistoryCard({ media }: { media: any }) {
     </div>
   );
 }
+
+// 视频配置管理组件
+function VideoConfigManager() {
+  const [selectedMedia, setSelectedMedia] = useState<MediaContent | null>(null);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [episodeUrls, setEpisodeUrls] = useState<Record<number, string>>({});
+  const [searchResults, setSearchResults] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showEpisodeEditor, setShowEpisodeEditor] = useState(false);
+
+  // 从 localStorage 加载所有媒体数据
+  const [allMedia, setAllMedia] = useState<MediaContent[]>([]);
+  const [filteredMedia, setFilteredMedia] = useState<MediaContent[]>([]);
+
+  useEffect(() => {
+    try {
+      const realDataSaved = localStorage.getItem('realMediaData');
+      const realData = realDataSaved ? JSON.parse(realDataSaved) : [];
+      setAllMedia([...mockMediaData, ...realData]);
+      setFilteredMedia([...mockMediaData, ...realData]);
+    } catch (error) {
+      console.error('Failed to load media data:', error);
+      setAllMedia(mockMediaData);
+      setFilteredMedia(mockMediaData);
+    }
+  }, []);
+
+  // 当选择媒体时，加载现有的视频URL配置
+  const handleSelectMedia = (media: MediaContent) => {
+    setSelectedMedia(media);
+    setVideoUrl(media.videoUrl || '');
+    setEpisodeUrls(media.episodeUrls || {});
+    const hasEpisodes = Boolean(media.episodeUrls && Object.keys(media.episodeUrls).length > 0);
+    setShowEpisodeEditor(media.type !== '电影' && hasEpisodes);
+    setSearchResults(null);
+  };
+
+  // 搜索视频URL
+  const handleSearchVideo = async () => {
+    if (!selectedMedia) return;
+
+    setSearchLoading(true);
+    try {
+      const response = await fetch('/api/video/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: selectedMedia.title,
+          type: selectedMedia.type,
+        }),
+      });
+
+      const data = await response.json();
+      setSearchResults(data);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults({
+        success: false,
+        error: error instanceof Error ? error.message : '搜索失败'
+      });
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // 添加分集URL
+  const handleAddEpisode = (episode: number, url: string) => {
+    setEpisodeUrls(prev => ({
+      ...prev,
+      [episode]: url,
+    }));
+  };
+
+  // 移除分集URL
+  const handleRemoveEpisode = (episode: number) => {
+    setEpisodeUrls(prev => {
+      const newUrls = { ...prev };
+      delete newUrls[episode];
+      return newUrls;
+    });
+  };
+
+  // 保存视频URL配置
+  const handleSaveConfig = async () => {
+    if (!selectedMedia) return;
+
+    // 验证
+    if (!videoUrl && Object.keys(episodeUrls).length === 0) {
+      alert('请至少提供一个视频URL');
+      return;
+    }
+
+    // 验证URL格式
+    const urlPattern = /^https?:\/\/.+\.(mp4|m3u8|flv|webm|mkv)/i;
+    if (videoUrl && !urlPattern.test(videoUrl)) {
+      alert('视频URL格式不正确，应该是.mp4/.m3u8/.flv/.webm/.mkv等格式');
+      return;
+    }
+
+    for (const [episode, url] of Object.entries(episodeUrls)) {
+      if (!urlPattern.test(url)) {
+        alert(`第${episode}集的URL格式不正确`);
+        return;
+      }
+    }
+
+    try {
+      // 保存到 localStorage
+      const realDataSaved = localStorage.getItem('realMediaData');
+      const realData = realDataSaved ? JSON.parse(realDataSaved) : [];
+
+      // 查找并更新对应的媒体数据
+      const index = realData.findIndex((m: MediaContent) => m.id === selectedMedia!.id);
+      if (index >= 0) {
+        realData[index] = {
+          ...realData[index],
+          videoUrl,
+          episodeUrls,
+        };
+      } else {
+        // 如果在真实数据中找不到，从mockData中查找并添加到真实数据
+        const mockIndex = mockMediaData.findIndex(m => m.id === selectedMedia!.id);
+        if (mockIndex >= 0) {
+          const newMedia = {
+            ...mockMediaData[mockIndex],
+            videoUrl,
+            episodeUrls,
+          };
+          realData.push(newMedia);
+        }
+      }
+
+      localStorage.setItem('realMediaData', JSON.stringify(realData));
+      alert('视频URL配置已保存！');
+    } catch (error) {
+      console.error('Save error:', error);
+      alert('保存失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    }
+  };
+
+  // 使用搜索结果
+  const handleUseSearchResult = (result: any) => {
+    if (selectedMedia?.type === '电影') {
+      setVideoUrl(result.url);
+    } else {
+      const nextEpisode = Object.keys(episodeUrls).length + 1;
+      handleAddEpisode(nextEpisode, result.url);
+    }
+  };
+
+  // 批量添加分集URL
+  const handleBatchAddEpisodes = () => {
+    const count = prompt('请输入要添加的集数（例如：10）');
+    if (!count) return;
+
+    const numEpisodes = parseInt(count);
+    if (isNaN(numEpisodes) || numEpisodes <= 0) {
+      alert('请输入有效的集数');
+      return;
+    }
+
+    const basePattern = prompt('请输入URL模式（例如：https://example.com/episode/{episode}.mp4）\n其中 {episode} 会被替换为集数');
+    if (!basePattern) return;
+
+    for (let i = 1; i <= numEpisodes; i++) {
+      const url = basePattern.replace('{episode}', i.toString());
+      handleAddEpisode(i, url);
+    }
+
+    alert(`已成功添加 ${numEpisodes} 集的URL模式`);
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h3 className="text-xl font-bold text-gray-900 mb-6">视频URL配置</h3>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 左侧：媒体选择列表 */}
+        <div>
+          <h4 className="text-lg font-semibold text-gray-900 mb-4">选择作品</h4>
+          <div className="space-y-2 max-h-[600px] overflow-y-auto">
+            {filteredMedia.map(media => (
+              <div
+                key={media.id}
+                onClick={() => handleSelectMedia(media)}
+                className={`p-4 rounded-lg cursor-pointer border-2 transition ${
+                  selectedMedia?.id === media.id
+                    ? 'border-purple-500 bg-purple-50'
+                    : 'border-gray-200 hover:border-purple-300'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <img
+                    src={media.image || '/images/placeholders/default.jpg'}
+                    alt={media.title}
+                    className="w-16 h-20 object-cover rounded flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                        {media.type}
+                      </span>
+                      {media.videoUrl && (
+                        <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
+                          已配置
+                        </span>
+                      )}
+                    </div>
+                    <h5 className="font-semibold text-gray-900 truncate">{media.title}</h5>
+                    <p className="text-sm text-gray-500 truncate">{media.year} · {media.country}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 右侧：视频URL配置 */}
+        <div>
+          {selectedMedia ? (
+            <div className="space-y-6">
+              {/* 作品信息 */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-lg font-semibold text-gray-900 mb-2">{selectedMedia.title}</h4>
+                <p className="text-sm text-gray-600">
+                  类型：{selectedMedia.type} | 年份：{selectedMedia.year} | 国家：{selectedMedia.country}
+                </p>
+              </div>
+
+              {/* 自动搜索按钮 */}
+              <div>
+                <button
+                  onClick={handleSearchVideo}
+                  disabled={searchLoading}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 transition shadow-lg"
+                >
+                  {searchLoading ? '搜索中...' : '🔍 自动搜索视频URL'}
+                </button>
+                <p className="text-xs text-gray-500 mt-2">
+                  点击后将自动搜索可用的视频播放源
+                </p>
+              </div>
+
+              {/* 搜索结果 */}
+              {searchResults && (
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h5 className="font-semibold text-gray-900 mb-3">搜索结果</h5>
+                  {searchResults.success ? (
+                    <div className="space-y-2">
+                      {searchResults.results.map((result: any, index: number) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100 transition"
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">{result.platform}</div>
+                            <div className="text-sm text-gray-600">{result.quality} · {result.description}</div>
+                          </div>
+                          <button
+                            onClick={() => handleUseSearchResult(result)}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 transition"
+                          >
+                            使用
+                          </button>
+                        </div>
+                      ))}
+                      {searchResults.note && (
+                        <p className="text-xs text-yellow-600 mt-2">{searchResults.note}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-red-600 text-sm">{searchResults.error}</div>
+                  )}
+                </div>
+              )}
+
+              {/* 视频URL配置 */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h5 className="font-semibold text-gray-900 mb-4">视频URL配置</h5>
+
+                {selectedMedia.type === '电影' ? (
+                  // 电影：单视频URL
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      视频URL
+                    </label>
+                    <input
+                      type="text"
+                      value={videoUrl}
+                      onChange={(e) => setVideoUrl(e.target.value)}
+                      placeholder="https://example.com/video.mp4"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      支持 .mp4, .m3u8, .flv, .webm, .mkv 等格式
+                    </p>
+                  </div>
+                ) : (
+                  // 其他类型：分集URL
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <label className="block text-sm font-medium text-gray-700">
+                        分集URL配置
+                      </label>
+                      <button
+                        onClick={handleBatchAddEpisodes}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
+                      >
+                        批量添加
+                      </button>
+                    </div>
+
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {Object.entries(episodeUrls)
+                        .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                        .map(([episode, url]) => (
+                          <div key={episode} className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-700 w-16">
+                              第{episode}集
+                            </span>
+                            <input
+                              type="text"
+                              value={url}
+                              onChange={(e) => handleAddEpisode(parseInt(episode), e.target.value)}
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                              placeholder="https://example.com/episode1.mp4"
+                            />
+                            <button
+                              onClick={() => handleRemoveEpisode(parseInt(episode))}
+                              className="px-3 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200 transition"
+                            >
+                              删除
+                            </button>
+                          </div>
+                        ))}
+
+                      {/* 添加新集数 */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+                        <span className="text-sm font-medium text-gray-700 w-16">
+                          新增
+                        </span>
+                        <select
+                          onChange={(e) => {
+                            const episode = parseInt(e.target.value);
+                            if (!episodeUrls[episode]) {
+                              handleAddEpisode(episode, '');
+                            }
+                          }}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                        >
+                          {[...Array(100)].map((_, i) => (
+                            <option key={i + 1} value={i + 1}>
+                              第{i + 1}集
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 保存按钮 */}
+              <div className="flex gap-4">
+                <button
+                  onClick={handleSaveConfig}
+                  className="flex-1 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition shadow-lg"
+                >
+                  💾 保存配置
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedMedia(null);
+                    setVideoUrl('');
+                    setEpisodeUrls({});
+                    setSearchResults(null);
+                  }}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-96 text-center">
+              <div>
+                <div className="text-6xl mb-4">🎬</div>
+                <h4 className="text-xl font-semibold text-gray-900 mb-2">请选择要配置的作品</h4>
+                <p className="text-gray-600">从左侧列表中选择一个作品，开始配置视频URL</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
