@@ -34,19 +34,7 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState('1');
   const [videoDuration, setVideoDuration] = useState(0);
-
-  // 当显示播放器时，尝试自动播放视频
-  useEffect(() => {
-    if (showPlayer && videoRef.current) {
-      console.log('[播放器] 显示播放器，尝试播放视频');
-      // 短暂延迟确保 DOM 已更新
-      setTimeout(() => {
-        videoRef.current?.play().catch(err => {
-          console.warn('[播放器] 自动播放失败，需要用户手动点击播放:', err);
-        });
-      }, 100);
-    }
-  }, [showPlayer, currentEpisode]);
+  const [videoError, setVideoError] = useState(false);
 
   // 背景色配置（必须在提前 return 之前调用，以保持 Hooks 顺序一致）
   const backgroundConfig = useMemo(() => {
@@ -266,6 +254,7 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const openPlayer = (episodeNumber: number) => {
     setCurrentEpisode(episodeNumber);
     setCurrentTime(0);
+    setVideoError(false); // 重置错误状态
     setShowPlayer(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -275,6 +264,7 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
     setShowPlayer(false);
     setCurrentEpisode(1);
     setCurrentTime(0);
+    setVideoError(false); // 重置错误状态
     // 停止视频播放
     if (videoRef.current) {
       videoRef.current.pause();
@@ -286,22 +276,13 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const getVideoUrl = () => {
     if (!media) return '';
 
-    // 示例视频 URL（用于降级）- 使用 Google 的公共测试视频源（支持 CORS 且稳定）
-    const sampleVideoUrls = [
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    ];
-
     // 如果是电影类型，使用 videoUrl
     if (media.type === '电影') {
-      // 优先使用配置的 videoUrl
       if (media.videoUrl) {
         return media.videoUrl;
       }
-      // 如果没有 videoUrl，使用第一个示例视频作为降级
-      console.warn(`[播放器] 电影 "${media.title}" 没有配置 videoUrl，使用示例视频`);
-      return sampleVideoUrls[0];
+      // 没有配置 videoUrl，返回空字符串
+      return '';
     }
 
     // 其他类型（电视剧、动漫等），使用 episodeUrls 中的对应集数
@@ -309,9 +290,8 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
       return media.episodeUrls[currentEpisode];
     }
 
-    // 如果没有配置的集数 URL，使用示例视频作为降级
-    console.warn(`[播放器] 作品 "${media.title}" 第 ${currentEpisode} 集没有配置视频URL，使用示例视频`);
-    return sampleVideoUrls[currentEpisode % sampleVideoUrls.length];
+    // 没有配置的集数 URL，返回空字符串
+    return '';
   };
 
   // 处理视频时间更新
@@ -325,7 +305,18 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       setVideoDuration(videoRef.current.duration);
+      setVideoError(false); // 重置错误状态
     }
+  };
+
+  // 处理视频加载错误
+  const handleVideoError = () => {
+    console.error('[播放器] 视频加载失败');
+    console.error('[播放器] 视频URL:', getVideoUrl());
+    console.error('[播放器] 网络状态:', videoRef.current?.networkState);
+    console.error('[播放器] 错误代码:', videoRef.current?.error?.code);
+    console.error('[播放器] 错误消息:', videoRef.current?.error?.message);
+    setVideoError(true);
   };
 
   // 全屏切换
@@ -787,8 +778,8 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
         {/* 视频播放界面 */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
           <div ref={videoContainerRef} className="relative bg-black aspect-video">
-            {/* 真实视频播放器 - 只在有视频源时渲染 */}
-            {getVideoUrl() && (
+            {/* 真实视频播放器 - 只在有视频源且没有错误时渲染 */}
+            {getVideoUrl() && !videoError && (
               <video
                 ref={videoRef}
                 className="w-full h-full"
@@ -798,28 +789,7 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
                 poster={media.image || '/images/placeholders/default.jpg'}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
-                onError={(e) => {
-                  console.error('[播放器] 视频加载失败:', e);
-                  console.error('[播放器] 视频URL:', getVideoUrl());
-                  console.error('[播放器] 网络状态:', videoRef.current?.networkState);
-                  console.error('[播放器] 错误代码:', videoRef.current?.error?.code);
-                  console.error('[播放器] 错误消息:', videoRef.current?.error?.message);
-                }}
-                onLoadStart={() => {
-                  console.log('[播放器] 视频开始加载，URL:', getVideoUrl());
-                }}
-                onWaiting={() => {
-                  console.log('[播放器] 视频缓冲中...');
-                }}
-                onCanPlay={() => {
-                  console.log('[播放器] 视频可以播放');
-                }}
-                onPlay={() => {
-                  console.log('[播放器] 视频开始播放');
-                }}
-                onPause={() => {
-                  console.log('[播放器] 视频暂停');
-                }}
+                onError={handleVideoError}
               >
                 <source
                   src={getVideoUrl()}
@@ -829,8 +799,8 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
               </video>
             )}
 
-            {/* 如果没有视频源，显示提示 */}
-            {!getVideoUrl() && (
+            {/* 如果没有视频源或加载失败，显示提示 */}
+            {(!getVideoUrl() || videoError) && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/90">
                 <div className="text-white text-center max-w-md px-4">
                   <svg className="w-24 h-24 mx-auto mb-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
@@ -839,9 +809,11 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
                   <p className="text-2xl font-semibold mb-2">{media.title}</p>
                   <p className="text-gray-400 mb-2">第 {currentEpisode} 集</p>
                   <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 text-yellow-200 text-sm">
-                    <p className="font-semibold mb-1">⚠️ 暂无视频源</p>
+                    <p className="font-semibold mb-1">⚠️ {videoError ? '视频加载失败' : '暂无视频源'}</p>
                     <p className="opacity-90">
-                      当前内容没有配置视频源。请联系管理员添加视频URL，或使用外部链接观看。
+                      {videoError
+                        ? '视频源无法加载，可能是网络问题或视频链接无效。请检查网络连接或联系管理员。'
+                        : '当前内容没有配置视频源。请联系管理员添加视频URL，或使用外部链接观看。'}
                     </p>
                     {media.externalUrl && (
                       <div className="mt-3">
