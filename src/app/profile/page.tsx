@@ -285,16 +285,28 @@ function DataManager() {
     if (!result?.success || !result?.data) return;
 
     try {
-      // 将所有类型的数据合并为一个数组
-      const allData: any[] = [];
-      Object.entries(result.data).forEach(([type, items]) => {
-        (items as any[]).forEach((item: any) => {
-          allData.push({
-            ...item,
-            type: type,
-          });
+      let allData: any[] = [];
+
+      // 判断 data 是数组还是对象
+      if (Array.isArray(result.data)) {
+        // 单个类型爬取：data 是数组
+        allData = result.data.map((item: any) => ({
+          ...item,
+          type: item.type || selectedType,
+        }));
+      } else {
+        // 所有类型爬取：data 是对象
+        Object.entries(result.data).forEach(([type, items]: [string, any]) => {
+          if (Array.isArray(items)) {
+            items.forEach((item: any) => {
+              allData.push({
+                ...item,
+                type: type,
+              });
+            });
+          }
         });
-      });
+      }
 
       // 保存到 localStorage
       localStorage.setItem('realMediaData', JSON.stringify(allData));
@@ -443,13 +455,14 @@ function DataManager() {
               {/* 详细数据 */}
               {result.data && (
                 <div className="space-y-4">
-                  {Object.entries(result.data).map(([type, items]: [string, any]) => (
-                    <div key={type} className="border border-gray-200 rounded-lg p-4">
+                  {Array.isArray(result.data) ? (
+                    // 单个类型爬取：data 是数组
+                    <div className="border border-gray-200 rounded-lg p-4">
                       <h6 className="text-lg font-semibold text-gray-900 mb-3">
-                        {type} ({items.length} 条)
+                        {result.source || '数据'} ({result.data.length} 条)
                       </h6>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        {items.slice(0, 3).map((item: any, index: number) => (
+                        {result.data.slice(0, 3).map((item: any, index: number) => (
                           <div
                             key={index}
                             className="bg-gray-50 rounded-lg p-4 border border-gray-200"
@@ -464,14 +477,45 @@ function DataManager() {
                             </div>
                           </div>
                         ))}
-                        {items.length > 3 && (
+                        {result.data.length > 3 && (
                           <div className="flex items-center justify-center bg-gray-100 rounded-lg text-gray-500">
-                            +{items.length - 3} 更多
+                            +{result.data.length - 3} 更多
                           </div>
                         )}
                       </div>
                     </div>
-                  ))}
+                  ) : (
+                    // 所有类型爬取：data 是对象
+                    Object.entries(result.data).map(([type, items]: [string, any]) => (
+                      <div key={type} className="border border-gray-200 rounded-lg p-4">
+                        <h6 className="text-lg font-semibold text-gray-900 mb-3">
+                          {type} ({items.length} 条)
+                        </h6>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                          {Array.isArray(items) ? items.slice(0, 3).map((item: any, index: number) => (
+                            <div
+                              key={index}
+                              className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                            >
+                              <div className="font-medium text-gray-900 mb-2">
+                                {item.title}
+                              </div>
+                              <div className="text-sm text-gray-600 space-y-1">
+                                <div>评分: {item.rating?.toFixed(1)}</div>
+                                <div>年份: {item.year}</div>
+                                <div>国家: {item.country}</div>
+                              </div>
+                            </div>
+                          )) : null}
+                          {Array.isArray(items) && items.length > 3 && (
+                            <div className="flex items-center justify-center bg-gray-100 rounded-lg text-gray-500">
+                              +{items.length - 3} 更多
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
             </div>

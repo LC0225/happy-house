@@ -3,12 +3,13 @@
 import { mockMediaData } from '@/data/mockData';
 import { MediaContent } from '@/types/media';
 import Link from 'next/link';
-import { use, useState, useEffect, useMemo } from 'react';
+import { use, useState, useEffect, useMemo, useRef } from 'react';
 import PlaceholderImage from '@/components/PlaceholderImage';
 import { ChevronLeft, ChevronRight, Settings, X, BookOpen } from 'lucide-react';
 
 export default function DetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
 
   // 媒体数据状态
   const [media, setMedia] = useState<MediaContent | null>(null);
@@ -21,6 +22,49 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const [brightness, setBrightness] = useState(100);
   const [backgroundColor, setBackgroundColor] = useState<'white' | 'warm' | 'dark' | 'green'>('white');
   const [showSettings, setShowSettings] = useState(false);
+
+  // 播放器状态
+  const [currentEpisode, setCurrentEpisode] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [showPlayer, setShowPlayer] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [isCasting, setIsCasting] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState('1');
+
+  // 模拟集数数据
+  const totalEpisodes = 30;
+
+  // 背景色配置（必须在提前 return 之前调用，以保持 Hooks 顺序一致）
+  const backgroundConfig = useMemo(() => {
+    const configs = {
+      white: { bg: 'bg-white', text: 'text-gray-800', name: '白色' },
+      warm: { bg: 'bg-amber-50', text: 'text-amber-900', name: '护眼黄' },
+      dark: { bg: 'bg-gray-900', text: 'text-gray-100', name: '夜间' },
+      green: { bg: 'bg-green-50', text: 'text-green-900', name: '护眼绿' },
+    };
+    return configs[backgroundColor];
+  }, [backgroundColor]);
+
+  // 生成区域选项
+  const generateRegions = (total: number, regionSize: number) => {
+    const regions = [];
+    for (let i = 0; i < total; i += regionSize) {
+      const start = i + 1;
+      const end = Math.min(i + regionSize, total);
+      regions.push({
+        id: start.toString(),
+        label: `${start}-${end}`,
+        start,
+        end
+      });
+    }
+    return regions;
+  };
+
+  const episodeRegions = useMemo(() => generateRegions(totalEpisodes, 10), [totalEpisodes]);
+  const speedOptions = [1, 1.25, 1.5, 2, 3];
 
   // 从 localStorage 加载媒体数据
   useEffect(() => {
@@ -55,6 +99,23 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
     }
   }, [resolvedParams.id]);
 
+  // 当 id 改变时重置播放器和阅读器状态
+  useEffect(() => {
+    return () => {
+      // 退出全屏
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(err => {
+          console.error('退出全屏失败:', err);
+        });
+      }
+      // 重置状态
+      setShowReader(false);
+      setShowPlayer(false);
+      setCurrentChapter(null);
+      setCurrentEpisode(1);
+    };
+  }, [resolvedParams.id]);
+
   // 从 localStorage 加载阅读设置
   useEffect(() => {
     const savedSettings = localStorage.getItem('readerSettings');
@@ -71,6 +132,25 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
     const settings = { fontSize, brightness, backgroundColor };
     localStorage.setItem('readerSettings', JSON.stringify(settings));
   }, [fontSize, brightness, backgroundColor]);
+
+  // 监听全屏状态变化（必须在提前 return 之前调用）
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    // 组件卸载时退出全屏
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(err => {
+          console.error('退出全屏失败:', err);
+        });
+      }
+    };
+  }, []);
 
   if (!mounted) {
     return (
@@ -139,19 +219,12 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   const currentChapterData = chapters.find(ch => ch.number === currentChapter);
   const totalChapters = chapters.length;
 
-  // 背景色配置
-  const backgroundConfig = useMemo(() => {
-    const configs = {
-      white: { bg: 'bg-white', text: 'text-gray-800', name: '白色' },
-      warm: { bg: 'bg-amber-50', text: 'text-amber-900', name: '护眼黄' },
-      dark: { bg: 'bg-gray-900', text: 'text-gray-100', name: '夜间' },
-      green: { bg: 'bg-green-50', text: 'text-green-900', name: '护眼绿' },
-    };
-    return configs[backgroundColor];
-  }, [backgroundColor]);
-
   // 打开阅读器
   const openReader = (chapterNumber: number) => {
+    if (chapters.length === 0) {
+      alert('暂无章节内容，请稍后再试');
+      return;
+    }
     setCurrentChapter(chapterNumber);
     setShowReader(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -163,9 +236,49 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
     setCurrentChapter(null);
   };
 
-  // 上一章
+  // 打开播放器
+  const openPlayer = (episodeNumber: number) => {
+    setCurrentEpisode(episodeNumber);
+    setCurrentTime(0);
+    setShowPlayer(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // 关闭播放器
+  const closePlayer = () => {
+    setShowPlayer(false);
+    setCurrentEpisode(1);
+    setCurrentTime(0);
+  };
+
+  // 全屏切换
+  const toggleFullscreen = () => {
+    if (!videoContainerRef.current) return;
+
+    // 检查元素是否连接到 DOM
+    if (!document.body.contains(videoContainerRef.current)) {
+      console.warn('视频容器未连接到 DOM，无法切换全屏');
+      return;
+    }
+
+    if (!document.fullscreenElement) {
+      videoContainerRef.current.requestFullscreen().catch(err => {
+        console.error('全屏切换失败:', err);
+      });
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(err => {
+        console.error('退出全屏失败:', err);
+      });
+      setIsFullscreen(false);
+    }
+  };
+
+  // 上一章/集
   const prevChapter = currentChapter && currentChapter > 1 ? currentChapter - 1 : null;
   const nextChapter = currentChapter && currentChapter < totalChapters ? currentChapter + 1 : null;
+  const prevEpisode = currentEpisode > 1 ? currentEpisode - 1 : null;
+  const nextEpisode = currentEpisode < totalEpisodes ? currentEpisode + 1 : null;
 
   // 详情页视图
   const DetailView = () => (
@@ -262,21 +375,24 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
 
               {/* 操作按钮 */}
               <div className="flex flex-wrap gap-4">
-                {isNovel && chapters.length > 0 ? (
+                {isNovel ? (
                   <button
                     onClick={() => openReader(1)}
                     className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-center cursor-pointer flex items-center gap-2"
                   >
                     <BookOpen className="w-5 h-5" />
-                    开始阅读
+                    {chapters.length > 0 ? '开始阅读' : '暂无章节'}
                   </button>
                 ) : (
-                  <Link
-                    href={`/play/${media.id}`}
-                    className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-center"
+                  <button
+                    onClick={() => openPlayer(1)}
+                    className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-center cursor-pointer flex items-center gap-2"
                   >
-                    {media.type === '小说' ? '立即阅读' : '立即观看'}
-                  </Link>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                    </svg>
+                    立即观看
+                  </button>
                 )}
                 <button className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors">
                   加入收藏
@@ -286,19 +402,64 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
           </div>
 
           {/* 小说章节列表 */}
-          {isNovel && chapters.length > 0 && (
+          {isNovel && (
             <div className="border-t border-gray-200 p-6 md:p-8">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6">章节列表</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {chapters.map((chapter) => (
-                  <button
-                    key={chapter.id}
-                    onClick={() => openReader(chapter.number)}
-                    className="px-4 py-3 bg-gray-50 hover:bg-purple-50 text-gray-700 hover:text-purple-700 rounded-lg transition-colors text-sm md:text-base text-center cursor-pointer"
-                  >
-                    {chapter.title}
-                  </button>
-                ))}
+              {chapters.length > 0 ? (
+                <>
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6">章节列表</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {chapters.map((chapter) => (
+                      <button
+                        key={chapter.id}
+                        onClick={() => openReader(chapter.number)}
+                        className="px-4 py-3 bg-gray-50 hover:bg-purple-50 text-gray-700 hover:text-purple-700 rounded-lg transition-colors text-sm md:text-base text-center cursor-pointer"
+                      >
+                        {chapter.title}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 text-lg mb-2">暂无章节内容</p>
+                  <p className="text-gray-400 text-sm">该小说的章节正在完善中，请稍后再试</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 视频集数列表 */}
+          {!isNovel && (
+            <div className="border-t border-gray-200 p-6 md:p-8">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6">集数列表</h2>
+              <div className="mb-4">
+                <select
+                  value={selectedRegion}
+                  onChange={(e) => setSelectedRegion(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  {episodeRegions.map((region) => (
+                    <option key={region.id} value={region.id}>
+                      {region.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="ml-4 text-gray-600">共 {totalEpisodes} 集</span>
+              </div>
+              <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+                {(() => {
+                  const region = episodeRegions.find(r => r.id === selectedRegion);
+                  if (!region) return [];
+                  return Array.from({ length: region.end - region.start + 1 }, (_, i) => region.start + i).map((episode) => (
+                    <button
+                      key={episode}
+                      onClick={() => openPlayer(episode)}
+                      className="px-3 py-2 bg-gray-50 hover:bg-purple-50 text-gray-700 hover:text-purple-700 rounded-lg transition-colors text-sm text-center cursor-pointer"
+                    >
+                      第{episode}集
+                    </button>
+                  ));
+                })()}
               </div>
             </div>
           )}
@@ -468,6 +629,211 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
     </div>
   );
 
+  // 播放器视图
+  const PlayerView = () => (
+    <div className="min-h-screen bg-gray-50">
+      {/* 头部 */}
+      <header className="bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={closePlayer}
+              className="text-purple-100 hover:text-white transition-colors flex items-center"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span className="ml-1">返回详情</span>
+            </button>
+            <div className="flex items-center gap-4">
+              <h1 className="text-lg font-semibold truncate">{media.title}</h1>
+            </div>
+            <div className="w-24"></div>
+          </div>
+        </div>
+      </header>
+
+      {/* 主内容 */}
+      <main className="container mx-auto px-4 py-6">
+        {/* 集数选择 - 区域划分 */}
+        <div className="bg-white rounded-lg shadow-lg p-4 mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">集数选择</label>
+          <div className="flex items-center gap-4 mb-4">
+            <select
+              value={selectedRegion}
+              onChange={(e) => setSelectedRegion(e.target.value)}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            >
+              {episodeRegions.map((region) => (
+                <option key={region.id} value={region.id}>
+                  {region.label}
+                </option>
+              ))}
+            </select>
+            <div className="text-gray-600 text-sm">
+              共 {totalEpisodes} 集
+            </div>
+          </div>
+
+          {/* 当前区域的集数列表 */}
+          <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+            {(() => {
+              const region = episodeRegions.find(r => r.id === selectedRegion);
+              if (!region) return [];
+              return Array.from({ length: region.end - region.start + 1 }, (_, i) => region.start + i).map((episode) => (
+                <button
+                  key={episode}
+                  onClick={() => openPlayer(episode)}
+                  className={`px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer ${
+                    currentEpisode === episode
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  第{episode}集
+                </button>
+              ));
+            })()}
+          </div>
+        </div>
+
+        {/* 视频播放界面 */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+          <div ref={videoContainerRef} className="relative bg-black aspect-video">
+            {/* 模拟视频播放器 */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-white text-center max-w-md px-4">
+                <svg className="w-24 h-24 mx-auto mb-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                </svg>
+                <p className="text-2xl font-semibold mb-2">{media.title}</p>
+                <p className="text-gray-400 mb-2">第 {currentEpisode} 集</p>
+                <p className="text-gray-500 text-sm mb-4">
+                  当前播放时间: {Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')}
+                </p>
+                <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-4 text-yellow-200 text-sm">
+                  <p className="font-semibold mb-1">⚠️ 演示模式</p>
+                  <p className="opacity-90">
+                    这是一个演示版本的视频播放器。在真实环境中，这里会集成真实的视频播放器（如 Video.js、DPlayer 等）和视频源。
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 投屏按钮 */}
+            <button
+              onClick={() => {
+                setIsCasting(!isCasting);
+                setTimeout(() => setIsCasting(false), 3000);
+              }}
+              className={`absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-lg transition-colors cursor-pointer ${
+                isCasting
+                  ? 'bg-green-500 text-white'
+                  : 'bg-black/50 text-white hover:bg-black/70'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              {isCasting ? '投屏中...' : '投屏'}
+            </button>
+
+            {/* 倍速选择按钮 */}
+            <div className="absolute top-4 left-4">
+              <div className="relative">
+                <button
+                  onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                  className="px-4 py-2 bg-black/50 text-white rounded-lg hover:bg-black/70 transition-colors cursor-pointer"
+                >
+                  {playbackSpeed}x
+                </button>
+                {showSpeedMenu && (
+                  <div className="absolute top-full left-0 mt-2 bg-black/90 text-white rounded-lg overflow-hidden z-10">
+                    {speedOptions.map((speed) => (
+                      <button
+                        key={speed}
+                        onClick={() => {
+                          setPlaybackSpeed(speed);
+                          setShowSpeedMenu(false);
+                        }}
+                        className={`block w-full px-4 py-2 text-left hover:bg-black/70 transition-colors cursor-pointer ${
+                          speed === playbackSpeed ? 'bg-purple-600' : ''
+                        }`}
+                      >
+                        {speed}x
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 播放控制栏 */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+              <div className="flex items-center gap-4">
+                <button className="text-white">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                <div className="flex-1 bg-gray-600 h-2 rounded-full">
+                  <div
+                    className="bg-purple-600 h-2 rounded-full transition-all"
+                    style={{ width: `${(currentTime / 3600) * 100}%` }}
+                  />
+                </div>
+                <span className="text-white text-sm">
+                  {Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')} / 60:00
+                </span>
+                <button
+                  onClick={toggleFullscreen}
+                  className="text-white hover:text-gray-300 transition-colors cursor-pointer"
+                  title={isFullscreen ? '退出全屏' : '全屏播放'}
+                >
+                  {isFullscreen ? (
+                    // 退出全屏图标
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    // 全屏图标
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 集数切换 */}
+        <div className="flex gap-4">
+          <button
+            onClick={() => prevEpisode && openPlayer(prevEpisode)}
+            disabled={!prevEpisode}
+            className={`flex-1 py-3 rounded-lg font-medium transition-colors cursor-pointer ${
+              prevEpisode
+                ? 'bg-purple-600 text-white hover:bg-purple-700'
+                : 'bg-gray-200 text-gray-700 cursor-not-allowed'
+            }`}
+          >
+            上一集
+          </button>
+          <button
+            onClick={() => nextEpisode && openPlayer(nextEpisode)}
+            disabled={!nextEpisode}
+            className={`flex-1 py-3 rounded-lg font-medium transition-colors cursor-pointer ${
+              nextEpisode
+                ? 'bg-purple-600 text-white hover:bg-purple-700'
+                : 'bg-gray-200 text-gray-700 cursor-not-allowed'
+            }`}
+          >
+            下一集
+          </button>
+        </div>
+      </main>
+    </div>
+  );
+
   // 根据状态显示不同视图
-  return showReader ? <ReaderView /> : <DetailView />;
+  return showPlayer ? <PlayerView /> : showReader ? <ReaderView /> : <DetailView />;
 }

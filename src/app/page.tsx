@@ -2,12 +2,16 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { countries, years, getGenresByType, getTagsByType, mockMediaData } from '@/data/mockData';
 import { MediaType, FilterOptions } from '@/types/media';
 import MediaCard from '@/components/MediaCard';
 import FilterBar from '@/components/FilterBar';
 
 export default function Home() {
+  const pathname = usePathname();
+  const router = useRouter();
+
   const [selectedType, setSelectedType] = useState<MediaType | '全部'>('全部');
 
   // 实际生效的筛选条件
@@ -52,10 +56,60 @@ export default function Home() {
       if (realDataSaved) {
         setRealData(JSON.parse(realDataSaved));
       }
+
+      // 加载首页状态
+      const homeStateSaved = localStorage.getItem('homePageState');
+      if (homeStateSaved) {
+        const state = JSON.parse(homeStateSaved);
+        setSelectedType(state.selectedType || '全部');
+        setAppliedFilters(state.appliedFilters || {
+          country: '全部',
+          year: '全部',
+          genre: '全部',
+          tag: '全部'
+        });
+        setTempFilters(state.tempFilters || {
+          country: '全部',
+          year: '全部',
+          genre: '全部',
+          tag: '全部'
+        });
+        setSearchQuery(state.searchQuery || '');
+        setIsSearching(state.isSearching || false);
+        setSearchError(state.searchError || null);
+        setSearchSource(state.searchSource || null);
+        setLastSearchKeyword(state.lastSearchKeyword || '');
+      }
     } catch (error) {
       console.error('Failed to load data from localStorage:', error);
     }
   }, []);
+
+  // 保存首页状态到 localStorage
+  const saveHomePageState = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        const state = {
+          selectedType,
+          appliedFilters,
+          tempFilters,
+          searchQuery,
+          isSearching,
+          searchError,
+          searchSource,
+          lastSearchKeyword
+        };
+        localStorage.setItem('homePageState', JSON.stringify(state));
+      } catch (error) {
+        console.error('Failed to save home page state:', error);
+      }
+    }
+  };
+
+  // 监听状态变化并保存
+  useEffect(() => {
+    saveHomePageState();
+  }, [selectedType, appliedFilters, tempFilters, searchQuery, isSearching, searchError, searchSource, lastSearchKeyword]);
 
   // 切换收藏并保存到 localStorage
   const handleToggleFavorite = (id: string) => {
