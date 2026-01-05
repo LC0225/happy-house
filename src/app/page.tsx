@@ -12,7 +12,7 @@ export default function Home() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [selectedType, setSelectedType] = useState<MediaType | '全部'>('全部');
+  const [selectedType, setSelectedType] = useState<MediaType>('电影');
 
   // 实际生效的筛选条件
   const [appliedFilters, setAppliedFilters] = useState({
@@ -61,7 +61,12 @@ export default function Home() {
       const homeStateSaved = localStorage.getItem('homePageState');
       if (homeStateSaved) {
         const state = JSON.parse(homeStateSaved);
-        setSelectedType(state.selectedType || '全部');
+        // 如果保存的是 '全部'，则默认显示 '电影'
+        const validTypes: MediaType[] = ['电影', '小说', '短剧', '动漫', '综艺', '电视剧'];
+        const savedType = state.selectedType && validTypes.includes(state.selectedType)
+          ? state.selectedType as MediaType
+          : '电影';
+        setSelectedType(savedType);
         setAppliedFilters(state.appliedFilters || {
           country: '全部',
           year: '全部',
@@ -231,14 +236,7 @@ export default function Home() {
           return newData;
         });
 
-        // 自动切换到对应类型（如果搜索的是特定类型）
-        if (selectedType !== '全部' && data.data.length > 0) {
-          // 已在选中类型，无需切换
-        } else if (data.data.length > 0) {
-          // 根据搜索结果的类型自动切换
-          const firstResultType = data.data[0].type;
-          setSelectedType(firstResultType);
-        }
+        // 搜索完成，保持当前选中类型
       } else {
         setSearchError(data.error || data.message || '搜索失败，请重试');
       }
@@ -251,11 +249,11 @@ export default function Home() {
   };
 
   // 根据选择的类型获取对应的分类和标签
-  const currentGenres = selectedType === '全部' ? ['全部'] : getGenresByType(selectedType);
-  const currentTags = selectedType === '全部' ? ['全部'] : getTagsByType(selectedType);
+  const currentGenres = getGenresByType(selectedType);
+  const currentTags = getTagsByType(selectedType);
 
   // 当切换类型时，重置筛选条件
-  const handleTypeChange = (type: MediaType | '全部') => {
+  const handleTypeChange = (type: MediaType) => {
     setSelectedType(type);
     setAppliedFilters({
       country: '全部',
@@ -297,7 +295,7 @@ export default function Home() {
     const dataSource = realData;
     return dataSource.filter(item => {
       // 首先匹配类型
-      if (selectedType !== '全部' && item.type !== selectedType) return false;
+      if (item.type !== selectedType) return false;
 
       // 然后匹配筛选条件（只对当前类型生效）
       const matchCountry = appliedFilters.country === '全部' || item.country === appliedFilters.country;
@@ -313,7 +311,7 @@ export default function Home() {
     });
   }, [selectedType, appliedFilters, searchQuery, realData]);
 
-  const mediaTypes: (MediaType | '全部')[] = ['全部', '小说', '动漫', '电视剧', '综艺', '短剧', '电影'];
+  const mediaTypes: MediaType[] = ['电影', '小说', '短剧', '动漫', '综艺', '电视剧'];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -326,7 +324,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">快乐屋</h1>
-              <p className="text-purple-100 text-sm md:text-base">发现小说、动漫、电视剧、综艺、短剧、电影</p>
+              <p className="text-purple-100 text-sm md:text-base">发现电影、小说、短剧、动漫、综艺、电视剧</p>
             </div>
             <Link
               href="/profile"
@@ -422,9 +420,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 筛选栏 - 只在选择具体类型时显示 */}
-        {selectedType !== '全部' && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        {/* 筛选栏 */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <FilterBar
               countries={countries}
               years={years}
@@ -456,12 +453,11 @@ export default function Home() {
               </button>
             </div>
           </div>
-        )}
 
         {/* 结果统计 */}
         <div className="mb-6 text-gray-600">
           <span className="font-semibold">共 {filteredData.length} 部作品</span>
-          {selectedType !== '全部' && <span className="ml-2">· {selectedType}</span>}
+          <span className="ml-2">· {selectedType}</span>
           {appliedFilters.country !== '全部' && <span className="ml-2">· {appliedFilters.country}</span>}
           {appliedFilters.year !== '全部' && <span className="ml-2">· {appliedFilters.year}年</span>}
           {appliedFilters.genre !== '全部' && <span className="ml-2">· {appliedFilters.genre}</span>}

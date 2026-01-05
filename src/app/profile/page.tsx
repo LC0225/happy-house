@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 export default function ProfilePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'favorites' | 'history' | 'data'>('favorites');
-  const [selectedType, setSelectedType] = useState<MediaType | '全部'>('全部');
+  const [selectedType, setSelectedType] = useState<MediaType>('电影');
   const [mounted, setMounted] = useState(false);
 
   // 从 localStorage 加载收藏状态
@@ -46,12 +46,11 @@ export default function ProfilePage() {
   }, []);
 
   // 根据类型筛选
-  const filterByType = (items: any[], type: MediaType | '全部') => {
-    if (type === '全部') return items;
+  const filterByType = (items: any[], type: MediaType) => {
     return items.filter(item => item.type === type);
   };
 
-  const mediaTypes: (MediaType | '全部')[] = ['全部', '小说', '动漫', '电视剧', '综艺', '短剧'];
+  const mediaTypes: MediaType[] = ['电影', '小说', '短剧', '动漫', '综艺', '电视剧'];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -154,8 +153,8 @@ export default function ProfilePage() {
           <>
             {favorites.length > 0 ? (
               <>
-                {/* 按类型分组显示收藏 */}
-                {(selectedType === '全部' ? ['小说', '动漫', '电视剧', '综艺', '短剧'] as MediaType[] : [selectedType as MediaType]).map(type => {
+                {/* 显示当前选中类型的收藏 */}
+                {[selectedType].map(type => {
                   const typeFavorites = favorites.filter(f => f.type === type);
                   if (typeFavorites.length === 0) return null;
 
@@ -240,12 +239,12 @@ function DataManager() {
   const [result, setResult] = useState<any>(null);
 
   const types = [
-    { id: 'all', label: '全部类型' },
+    { id: '电影', label: '电影' },
     { id: '小说', label: '小说' },
-    { id: '动漫', label: '动漫' },
-    { id: '电视剧', label: '电视剧' },
-    { id: '综艺', label: '综艺' },
     { id: '短剧', label: '短剧' },
+    { id: '动漫', label: '动漫' },
+    { id: '综艺', label: '综艺' },
+    { id: '电视剧', label: '电视剧' },
   ];
 
   const sources = [
