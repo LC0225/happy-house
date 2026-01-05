@@ -28,20 +28,29 @@ export default function Home() {
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [mounted, setMounted] = useState(false);
+  const [useRealData, setUseRealData] = useState(false);
+  const [realData, setRealData] = useState<any[]>([]);
 
-  // 从 localStorage 加载收藏状态
+  // 从 localStorage 加载收藏状态和真实数据
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
   // 只在客户端挂载后加载 localStorage
   useEffect(() => {
     setMounted(true);
     try {
+      // 加载收藏
       const saved = localStorage.getItem('favorites');
       if (saved) {
         setFavorites(new Set(JSON.parse(saved)));
       }
+
+      // 加载真实数据
+      const realDataSaved = localStorage.getItem('realMediaData');
+      if (realDataSaved) {
+        setRealData(JSON.parse(realDataSaved));
+      }
     } catch (error) {
-      console.error('Failed to load favorites from localStorage:', error);
+      console.error('Failed to load data from localStorage:', error);
     }
   }, []);
 
@@ -109,7 +118,8 @@ export default function Home() {
   };
 
   const filteredData = useMemo(() => {
-    return mockMediaData.filter(item => {
+    const dataSource = useRealData ? realData : mockMediaData;
+    return dataSource.filter(item => {
       // 首先匹配类型
       if (selectedType !== '全部' && item.type !== selectedType) return false;
 
@@ -142,15 +152,26 @@ export default function Home() {
               <h1 className="text-3xl font-bold mb-2">快乐屋</h1>
               <p className="text-purple-100">发现小说、动漫、电视剧、综艺、短剧</p>
             </div>
-            <Link
-              href="/profile"
-              className="px-6 py-3 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              个人中心
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/crawler"
+                className="px-4 py-3 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                爬虫管理
+              </Link>
+              <Link
+                href="/profile"
+                className="px-4 py-3 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                个人中心
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -166,6 +187,40 @@ export default function Home() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
+          
+          {/* 数据源切换 */}
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-sm text-gray-600">数据源:</span>
+            <button
+              onClick={() => setUseRealData(false)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                !useRealData
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              演示数据
+            </button>
+            <button
+              onClick={() => setUseRealData(true)}
+              disabled={realData.length === 0}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                useRealData
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              } ${realData.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              真实数据 ({realData.length})
+            </button>
+            {realData.length === 0 && (
+              <Link
+                href="/crawler"
+                className="text-sm text-purple-600 hover:text-purple-700"
+              >
+                前往爬虫管理页面获取数据
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* 类型切换 */}
