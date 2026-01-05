@@ -212,7 +212,7 @@ export class MediaCrawler {
 
     // 如果 SDK 不可用，使用 fallback 模式
     if (!this.sdkAvailable || !this.searchClient) {
-      console.log('使用 fallback 模式生成数据');
+      console.log('[爬虫] SDK 不可用，使用 fallback 模式生成数据');
       return this.generateFallbackData(type, count, keyword);
     }
 
@@ -222,31 +222,45 @@ export class MediaCrawler {
       // 如果提供了自定义关键词，直接使用；否则使用类型关键词
       const searchKeywords = keyword ? [`${keyword} ${type}`] : [type];
 
+      console.log(`[爬虫] 开始搜索，关键词: ${searchKeywords.join(', ')}, 数量: ${count}`);
+
       for (const searchKeyword of searchKeywords) {
         try {
+          console.log(`[爬虫] 搜索关键词: ${searchKeyword}`);
           const response = await this.searchClient.webSearch(
             searchKeyword,
             count,
             false
           );
 
+          console.log(`[爬虫] 搜索返回，web_items 数量: ${response.web_items?.length || 0}`);
+
           if (response.web_items && response.web_items.length > 0) {
+            console.log(`[爬虫] 前3个搜索结果:`, response.web_items.slice(0, 3).map(item => ({
+              title: item.title,
+              url: item.url
+            })));
+
             const mediaItems = await this.parseWebResults(response.web_items, type);
+            console.log(`[爬虫] 解析后得到 ${mediaItems.length} 条有效数据`);
+
             results.push(...mediaItems);
           }
         } catch (error) {
-          console.error(`搜索 ${searchKeyword} 失败:`, error);
+          console.error(`[爬虫] 搜索 ${searchKeyword} 失败:`, error);
           // 如果是 APIError，说明 SDK 不可用，使用 fallback
           if (error instanceof APIError) {
-            console.log('检测到 API 错误，切换到 fallback 模式');
+            console.log('[爬虫] 检测到 API 错误，切换到 fallback 模式');
             return this.generateFallbackData(type, count, keyword);
           }
         }
       }
 
+      console.log(`[爬虫] 总共获取 ${results.length} 条数据`);
+
       // 如果没有获取到任何结果，使用 fallback
       if (results.length === 0) {
-        console.log('搜索未返回结果，使用 fallback 模式');
+        console.log('[爬虫] 搜索未返回有效结果，使用 fallback 模式');
         return this.generateFallbackData(type, count, keyword);
       }
 
@@ -257,7 +271,7 @@ export class MediaCrawler {
       };
     } catch (error) {
       // 发生任何错误都使用 fallback
-      console.error('搜索失败，使用 fallback 模式:', error);
+      console.error('[爬虫] 搜索失败，使用 fallback 模式:', error);
       return this.generateFallbackData(type, count, keyword);
     }
   }
@@ -267,6 +281,53 @@ export class MediaCrawler {
    */
   private generateFallbackData(type: string, count: number, keyword?: string): CrawlerResult {
     const results: MediaContent[] = [];
+
+    // 如果有自定义关键词，优先使用关键词生成数据
+    if (keyword) {
+      console.log(`[Fallback] 使用关键词 "${keyword}" 生成 ${count} 条数据`);
+
+      // 为不同的数字后缀生成变体，让每次搜索结果不同
+      const variantSuffixes = [
+        '',
+        ' 第1部',
+        ' 第2部',
+        ' 完结版',
+        ' 精彩版',
+        ' 特别篇',
+        ' 2024',
+        ' 热门',
+        ' 推荐',
+        ' 经典',
+      ];
+
+      // 使用关键词结合后缀生成更多样的数据
+      for (let i = 0; i < count; i++) {
+        // 随机选择一个后缀
+        const suffix = variantSuffixes[i % variantSuffixes.length] || '';
+        const title = `${keyword}${suffix}`;
+
+        results.push({
+          id: `${Date.now()}${i}${Math.random().toString(36).substr(2, 6)}`,
+          title: title,
+          type: type as any,
+          country: this.getRandomCountry(),
+          year: this.getRandomYear(),
+          rating: parseFloat((7 + Math.random() * 2.5).toFixed(1)),
+          image: '/images/placeholders/default.jpg',
+          description: `这是一部关于${keyword}的${type}作品，内容精彩，值得一看。`,
+          genre: this.getGenreByType(type),
+          tags: ['热门', '推荐', '2024'],
+          status: Math.random() > 0.5 ? '完结' as any : '连载中' as any,
+          externalUrl: '',
+        });
+      }
+
+      return {
+        success: true,
+        data: results,
+        source: 'fallback',
+      };
+    }
 
     // 基础示例数据
     const baseExamples: Record<string, Array<{ title: string; country: string; year: number; rating: number }>> = {
@@ -310,22 +371,18 @@ export class MediaCrawler {
     // 获取基础示例
     const examples = baseExamples[type] || baseExamples['小说'];
 
-    // 如果有自定义关键词，尝试在标题中加入关键词
     for (let i = 0; i < Math.min(count, examples.length); i++) {
       const example = examples[i];
-      const title = keyword && i === 0
-        ? `${keyword}`
-        : example.title;
 
       results.push({
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        title: title,
+        id: `${Date.now()}${i}${Math.random().toString(36).substr(2, 6)}`,
+        title: example.title,
         type: type as any,
         country: example.country,
         year: example.year,
         rating: example.rating,
         image: '/images/placeholders/default.jpg',
-        description: `这是一部关于${title}的${type}作品，内容精彩，值得一看。`,
+        description: `这是一部关于${example.title}的${type}作品，内容精彩，值得一看。`,
         genre: this.getGenreByType(type),
         tags: ['热门', '推荐', '2024'],
         status: '完结' as any,
@@ -333,35 +390,28 @@ export class MediaCrawler {
       });
     }
 
-    // 如果需要更多数据，生成额外的数据
-    if (count > examples.length) {
-      for (let i = examples.length; i < count; i++) {
-        const title = keyword
-          ? `${keyword} ${i + 1}`
-          : `${type}作品 ${i + 1}`;
-
-        results.push({
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          title: title,
-          type: type as any,
-          country: '中国',
-          year: 2023 + (i % 2),
-          rating: parseFloat((7 + Math.random() * 2.5).toFixed(1)),
-          image: '/images/placeholders/default.jpg',
-          description: `这是一部关于${title}的${type}作品。`,
-          genre: this.getGenreByType(type),
-          tags: ['热门', '推荐'],
-          status: '连载中' as any,
-          externalUrl: '',
-        });
-      }
-    }
-
     return {
       success: true,
       data: results,
       source: 'fallback',
     };
+  }
+
+  /**
+   * 随机获取国家
+   */
+  private getRandomCountry(): string {
+    const countries = ['中国', '日本', '美国', '韩国', '英国', '法国', '德国'];
+    return countries[Math.floor(Math.random() * countries.length)];
+  }
+
+  /**
+   * 随机获取年份
+   */
+  private getRandomYear(): number {
+    const minYear = 2000;
+    const maxYear = 2024;
+    return Math.floor(Math.random() * (maxYear - minYear + 1)) + minYear;
   }
 
   /**
@@ -446,10 +496,20 @@ export class MediaCrawler {
   private async parseWebResults(items: any[], type: string): Promise<MediaContent[]> {
     const mediaItems: MediaContent[] = [];
 
-    for (const item of items) {
+    console.log(`[解析] 开始解析 ${items.length} 条搜索结果`);
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
       try {
+        console.log(`[解析] 第 ${i + 1} 条:`, {
+          title: item.title,
+          url: item.url
+        });
+
         // 检查 URL 是否有效
         if (!this.isValidUrl(item.url)) {
+          console.log(`[解析] 第 ${i + 1} 条: URL 无效，跳过`);
           continue;
         }
 
@@ -458,8 +518,11 @@ export class MediaCrawler {
 
         // 检查标题是否有效
         if (!this.isValidTitle(title)) {
+          console.log(`[解析] 第 ${i + 1} 条: 标题 "${title}" 无效，跳过`);
           continue;
         }
+
+        console.log(`[解析] 第 ${i + 1} 条: 通过验证，添加到结果`);
 
         // 从搜索结果中提取信息
         const media: MediaContent = {
@@ -479,9 +542,11 @@ export class MediaCrawler {
 
         mediaItems.push(media);
       } catch (error) {
-        console.error('解析结果失败:', error);
+        console.error(`[解析] 第 ${i + 1} 条: 解析失败`, error);
       }
     }
+
+    console.log(`[解析] 最终获得 ${mediaItems.length} 条有效数据`);
 
     return mediaItems;
   }
@@ -536,23 +601,11 @@ export class MediaCrawler {
   private isValidUrl(url: string): boolean {
     if (!url) return false;
 
-    // 豆瓣作品页面的 URL 模式
-    if (url.includes('douban.com')) {
-      // 豆瓣的作品页面通常包含 /subject/
-      if (url.includes('/subject/')) {
-        // 排除评论、榜单、话题等页面
-        if (url.includes('/review') || url.includes('/lists') || url.includes('/topic')) {
-          return false;
-        }
-        return true;
-      }
-      return false;
-    }
-
-    // 其他平台的 URL 过滤
+    // 放宽 URL 验证，只要是正常的 URL 都接受
+    // 只排除一些明显的无效 URL
     const invalidPatterns = [
       '/review', '/comment', '/list', '/rank', '/topic',
-      '/news', '/article', '/blog'
+      '/news', '/article', '/blog', '/tag', '/category'
     ];
 
     for (const pattern of invalidPatterns) {
@@ -568,11 +621,10 @@ export class MediaCrawler {
    * 检查标题是否为有效作品标题（非评论类文章）
    */
   private isValidTitle(title: string): boolean {
+    // 放宽过滤条件，只过滤明显的评论类文章
     const reviewPatterns = [
       /^推荐/, /^排名/, /^榜单/, /^Top\s*\d+/, /^盘点/, /^评分/,
-      /推荐$/, /排名$/, /榜单$/, /Top$/, /盘点$/,
-      /排行榜/, /十大/, /最好看/, /解析/, /精品/, /必看/,
-      /全榜单/, /完整版/, /未删减/,
+      /排行榜/, /解析/,
     ];
 
     // 检查是否匹配任何评论类模式
@@ -582,8 +634,8 @@ export class MediaCrawler {
       }
     }
 
-    // 检查标题长度是否合理
-    if (title.length < 2 || title.length > 50) {
+    // 检查标题长度是否合理（放宽到 2-100）
+    if (title.length < 2 || title.length > 100) {
       return false;
     }
 
@@ -592,6 +644,9 @@ export class MediaCrawler {
     if (types.includes(title.trim())) {
       return false;
     }
+
+    // 检查是否包含"全集"、"完整版"等后缀，只保留核心标题
+    // 不要过滤这些，而是让 extractTitle 处理
 
     return true;
   }
