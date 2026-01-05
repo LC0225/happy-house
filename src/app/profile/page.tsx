@@ -148,7 +148,7 @@ export default function ProfilePage() {
         </div>
 
         {/* 内容展示 */}
-        {activeTab === 'favorites' ? (
+        {activeTab === 'favorites' && (
           <>
             {favorites.length > 0 ? (
               <>
@@ -195,7 +195,9 @@ export default function ProfilePage() {
               </div>
             )}
           </>
-        ) : (
+        )}
+
+        {activeTab === 'history' && (
           <>
             {filterByType(watchHistory, selectedType).length > 0 ? (
               <div className="space-y-4">
@@ -214,7 +216,6 @@ export default function ProfilePage() {
           </>
         )}
 
-        {/* 数据管理标签页 */}
         {activeTab === 'data' && <DataManager />}
       </main>
 
