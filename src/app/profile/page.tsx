@@ -528,37 +528,6 @@ function DataManager() {
           )}
         </div>
       )}
-
-      {/* 使用说明 */}
-      <div className="mt-8 bg-gray-50 rounded-lg p-6">
-        <h4 className="text-lg font-bold text-gray-900 mb-4">使用说明</h4>
-        <div className="space-y-4 text-sm text-gray-700">
-          <div>
-            <strong className="font-semibold">数据来源：</strong>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>联网搜索 - 从公开网页获取真实数据</li>
-              <li>智能解析 - 自动提取标题、评分、分类等信息</li>
-              <li>多源聚合 - 支持小说、动漫、电视剧、综艺、短剧</li>
-            </ul>
-          </div>
-          <div>
-            <strong className="font-semibold">存储优化：</strong>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>只存储链接 - 不存储实际视频和图片文件</li>
-              <li>轻量级设计 - 数据库仅保存元数据和 URL</li>
-              <li>测试模式 - 默认少量数据，节省资源</li>
-            </ul>
-          </div>
-          <div>
-            <strong className="font-semibold">注意事项：</strong>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>爬取的数据为演示性质，仅供开发测试使用</li>
-              <li>图片链接为占位符，需要手动替换</li>
-              <li>请勿用于商业用途或大规模数据采集</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

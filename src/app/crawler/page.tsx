@@ -296,42 +296,6 @@ export default function CrawlerPage() {
             </div>
           )}
         </div>
-
-        {/* 使用说明 */}
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            使用说明
-          </h3>
-          <div className="space-y-4 text-gray-700">
-            <div>
-              <h4 className="font-semibold mb-2">数据来源</h4>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>通过联网搜索从公开网页获取数据</li>
-                <li>自动提取标题、评分、描述、分类等信息</li>
-                <li>支持小说、动漫、电视剧、综艺、短剧五种类型</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-2">使用建议</h4>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>首次使用建议数量设置为 5-10，测试效果</li>
-                <li>爬取过程需要 10-30 秒，请耐心等待</li>
-                <li>数据质量取决于网络搜索结果</li>
-                <li>定期重新爬取可以获取最新数据</li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-2">注意事项</h4>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>爬取的数据为演示性质，仅供开发测试使用</li>
-                <li>图片链接为占位符，需要手动替换</li>
-                <li>请勿用于商业用途或大规模数据采集</li>
-              </ul>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
