@@ -12,6 +12,7 @@ export interface MediaContent {
   genre: string[];
   tags: string[];
   status: '完结' | '连载中' | '更新中';
+  externalUrl?: string; // 外部网站链接（可选）
 }
 
 export interface FilterOptions {

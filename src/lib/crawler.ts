@@ -136,13 +136,15 @@ export class MediaCrawler {
         title: item.title || item.name,
         type: type as any,
         country: '美国', // TMDb 的数据主要是欧美内容
-        year: item.release_date || item.first_air_date ? (item.release_date || item.first_air_date).substring(0, 4) : '2024',
+        year: item.release_date || item.first_air_date
+          ? parseInt((item.release_date || item.first_air_date).substring(0, 4))
+          : 2024,
         rating: item.vote_average,
         image: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : '/images/placeholders/default.jpg',
         description: item.overview || '暂无描述',
         genre: item.genre_ids.slice(0, 2).map((id: number) => this.getGenreName(id)),
         tags: ['TMDb'],
-        status: item.status || '未知',
+        status: (item.status === 'Ended' || item.status === 'Released') ? '完结' : '连载中',
         externalUrl: `https://www.themoviedb.org/${tmdbConfig.type}/${item.id}`,
       }));
 
@@ -172,7 +174,7 @@ export class MediaCrawler {
         );
 
         if (response.web_items) {
-          const mediaItems = response.web_items.slice(0, Math.ceil(count / 2)).map((item: any) => ({
+          const mediaItems = response.web_items.slice(0, Math.ceil(count / 2)).map((item: any): MediaContent => ({
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
             title: this.extractTitle(item.title, type),
             type: type as any,
@@ -183,7 +185,7 @@ export class MediaCrawler {
             description: this.extractDescription(item.snippet),
             genre: this.extractGenre(item.snippet, type),
             tags: ['豆瓣', '国产'],
-            status: '未知',
+            status: '完结' as const,
             externalUrl: item.url,
           }));
           items.push(...mediaItems);
@@ -210,8 +212,9 @@ export class MediaCrawler {
 
       for (const keyword of keywords) {
         try {
+          // 直接搜索作品类型，避免"推荐"等词导致搜索到评价文章
           const response = await this.searchClient.webSearch(
-            `${keyword} 推荐 2024`,
+            `${keyword}`,
             Math.ceil(count / keywords.length),
             true
           );
@@ -238,15 +241,16 @@ export class MediaCrawler {
   }
 
   /**
-   * 根据类型获取搜索关键词
+   * 根据类型获取搜索关键词 - 直接搜索作品名称
    */
   private getSearchKeywords(type: string): string[] {
+    // 使用具体作品示例搜索，避免搜索到评价文章
     const keywordMap: Record<string, string[]> = {
-      '小说': ['热门小说', '经典小说', '网络小说推荐', '最新小说'],
-      '动漫': ['热门动漫', '经典动漫', '日本动漫推荐', '新番动漫'],
-      '电视剧': ['热门电视剧', '经典电视剧', '美剧推荐', '国产剧推荐'],
-      '综艺': ['热门综艺', '经典综艺', '国产综艺', '综艺节目'],
-      '短剧': ['热门短剧', '甜宠短剧', '总裁短剧', '短剧推荐'],
+      '小说': ['小说', '言情小说', '玄幻小说', '穿越小说', '网络小说', '都市小说', '仙侠小说', '历史小说'],
+      '动漫': ['动漫', '日本动漫', '国漫', '动漫番剧', '热血动漫', '恋爱动漫', '治愈动漫', '科幻动漫'],
+      '电视剧': ['电视剧', '美剧', '韩剧', '国产电视剧', '日剧', '英剧', '都市剧', '古装剧'],
+      '综艺': ['综艺', '综艺节目', '真人秀', '音乐综艺', '脱口秀', '竞技综艺', '搞笑综艺'],
+      '短剧': ['短剧', '甜宠短剧', '总裁短剧', '穿越短剧', '重生短剧', '都市短剧'],
     };
     return keywordMap[type] || ['推荐'];
   }
@@ -332,9 +336,11 @@ export class MediaCrawler {
    * 提取标题
    */
   private extractTitle(title: string, type: string): string {
-    // 移除类型后缀和特殊字符
+    // 移除评价类文章的后缀和特殊字符
     return title
-      .replace(new RegExp(`(${type}|小说|动漫|电视剧|综艺|短剧|推荐|热门|经典)`, 'gi'), '')
+      .replace(/(推荐|排名|榜单|Top\s*\d+|盘点|评分|豆瓣|知乎|B站|优酷|爱奇艺|腾讯|芒果)/gi, '')
+      .replace(/(小说|动漫|电视剧|综艺|短剧)全集/g, '$1') // 保留类型但移除"全集"
+      .replace(/\[\d+\]/g, '') // 移除 [1]、[2] 这类标记
       .replace(/[\s\-_|]+/g, ' ')
       .trim()
       .substring(0, 50);
@@ -356,9 +362,9 @@ export class MediaCrawler {
   /**
    * 提取年份
    */
-  private extractYear(text: string): string {
+  private extractYear(text: string): number {
     const yearMatch = text.match(/20[1-2][0-9]|19[8-9][0-9]/);
-    return yearMatch ? yearMatch[0] : '2024';
+    return yearMatch ? parseInt(yearMatch[0]) : 2024;
   }
 
   /**
@@ -424,14 +430,14 @@ export class MediaCrawler {
   /**
    * 提取状态
    */
-  private extractStatus(text: string): string {
+  private extractStatus(text: string): '完结' | '连载中' | '更新中' {
     if (text.includes('连载') || text.includes('更新')) {
       return '连载中';
     }
     if (text.includes('完结') || text.includes('全集')) {
       return '完结';
     }
-    return '未知';
+    return '完结'; // 默认返回完结
   }
 
   /**

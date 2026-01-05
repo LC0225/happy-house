@@ -432,7 +432,7 @@ function DataManager() {
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                     {Object.entries(result.summary.byType).map(([type, count]) => (
                       <div key={type} className="text-center">
-                        <div className="text-2xl font-bold text-purple-600">{count}</div>
+                        <div className="text-2xl font-bold text-purple-600">{String(count)}</div>
                         <div className="text-sm text-gray-600">{type}</div>
                       </div>
                     ))}

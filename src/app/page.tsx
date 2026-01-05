@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { mockMediaData, countries, years, getGenresByType, getTagsByType } from '@/data/mockData';
+import { countries, years, getGenresByType, getTagsByType } from '@/data/mockData';
 import { MediaType, FilterOptions } from '@/types/media';
 import MediaCard from '@/components/MediaCard';
 import FilterBar from '@/components/FilterBar';
@@ -28,7 +28,6 @@ export default function Home() {
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [mounted, setMounted] = useState(false);
-  const [useRealData, setUseRealData] = useState(false);
   const [realData, setRealData] = useState<any[]>([]);
 
   // 从 localStorage 加载收藏状态和真实数据
@@ -118,7 +117,8 @@ export default function Home() {
   };
 
   const filteredData = useMemo(() => {
-    const dataSource = useRealData ? realData : mockMediaData;
+    // 只使用爬虫爬取的真实数据
+    const dataSource = realData;
     return dataSource.filter(item => {
       // 首先匹配类型
       if (selectedType !== '全部' && item.type !== selectedType) return false;
@@ -135,7 +135,7 @@ export default function Home() {
 
       return matchCountry && matchYear && matchGenre && matchTag && matchSearch;
     });
-  }, [selectedType, appliedFilters, searchQuery]);
+  }, [selectedType, appliedFilters, searchQuery, realData]);
 
   const mediaTypes: (MediaType | '全部')[] = ['全部', '小说', '动漫', '电视剧', '综艺', '短剧'];
 
@@ -176,37 +176,16 @@ export default function Home() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
-          
-          {/* 数据源切换 */}
+
+          {/* 数据状态提示 */}
           <div className="mt-4 flex items-center gap-3">
-            <span className="text-sm text-gray-600">数据源:</span>
-            <button
-              onClick={() => setUseRealData(false)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                !useRealData
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              演示数据
-            </button>
-            <button
-              onClick={() => setUseRealData(true)}
-              disabled={realData.length === 0}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                useRealData
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              } ${realData.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              真实数据 ({realData.length})
-            </button>
+            <span className="text-sm text-gray-600">当前共有 <strong>{realData.length}</strong> 部作品</span>
             {realData.length === 0 && (
               <Link
-                href="/crawler"
-                className="text-sm text-purple-600 hover:text-purple-700"
+                href="/profile"
+                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
               >
-                前往爬虫管理页面获取数据
+                前往个人中心使用爬虫获取数据 →
               </Link>
             )}
           </div>
@@ -291,8 +270,23 @@ export default function Home() {
           </div>
         ) : (
           <div className="text-center py-16">
-            <p className="text-gray-500 text-xl">没有找到匹配的内容</p>
-            <p className="text-gray-400 mt-2">请尝试调整筛选条件</p>
+            {realData.length === 0 ? (
+              <>
+                <p className="text-gray-500 text-xl mb-4">还没有数据</p>
+                <p className="text-gray-400 mb-6">请先使用爬虫获取作品数据</p>
+                <Link
+                  href="/profile"
+                  className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                >
+                  前往个人中心获取数据
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500 text-xl mb-4">没有找到匹配的内容</p>
+                <p className="text-gray-400">请尝试调整筛选条件或搜索关键词</p>
+              </>
+            )}
           </div>
         )}
       </main>
