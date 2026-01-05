@@ -18,7 +18,17 @@ export default function MediaCard({ media, isFavorite = false, onFavoriteToggle 
   // 确保只在客户端加载收藏状态
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // 从 localStorage 同步收藏状态
+    try {
+      const saved = localStorage.getItem('favorites');
+      if (saved) {
+        const savedFavorites = new Set(JSON.parse(saved));
+        setFavorite(savedFavorites.has(media.id));
+      }
+    } catch (error) {
+      console.error('Failed to load favorites:', error);
+    }
+  }, [media.id]);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();

@@ -270,9 +270,14 @@ function DataManager() {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       setResult(data);
     } catch (error) {
+      console.error('Crawler error:', error);
       setResult({
         success: false,
         error: error instanceof Error ? error.message : '未知错误',
@@ -287,6 +292,10 @@ function DataManager() {
 
     try {
       let allData: any[] = [];
+
+      // 获取现有数据
+      const existingDataStr = localStorage.getItem('realMediaData');
+      const existingData = existingDataStr ? JSON.parse(existingDataStr) : [];
 
       // 判断 data 是数组还是对象
       if (Array.isArray(result.data)) {
@@ -309,9 +318,20 @@ function DataManager() {
         });
       }
 
+      // 合并新数据和现有数据，去重（根据ID）
+      const mergedData = [...existingData];
+      allData.forEach(newItem => {
+        const existingIndex = mergedData.findIndex(item => item.id === newItem.id);
+        if (existingIndex >= 0) {
+          mergedData[existingIndex] = newItem; // 更新现有数据
+        } else {
+          mergedData.push(newItem); // 添加新数据
+        }
+      });
+
       // 保存到 localStorage
-      localStorage.setItem('realMediaData', JSON.stringify(allData));
-      alert('数据已保存！可以在首页的"真实数据"选项卡中使用');
+      localStorage.setItem('realMediaData', JSON.stringify(mergedData));
+      alert(`数据已保存！新增 ${allData.length} 条数据，当前共有 ${mergedData.length} 条数据`);
     } catch (error) {
       alert('保存失败: ' + (error instanceof Error ? error.message : '未知错误'));
     }
@@ -408,7 +428,7 @@ function DataManager() {
           {loading && (
             <div className="flex items-center text-gray-600">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mr-2"></div>
-              正在从网络搜索并提取数据...
+              <span>正在从网络搜索并提取数据，请稍候...</span>
             </div>
           )}
         </div>

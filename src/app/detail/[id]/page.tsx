@@ -267,14 +267,24 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
       videoContainerRef.current.requestFullscreen().catch(err => {
         console.error('全屏切换失败:', err);
       });
-      setIsFullscreen(true);
     } else {
       document.exitFullscreen().catch(err => {
         console.error('退出全屏失败:', err);
       });
-      setIsFullscreen(false);
     }
   };
+
+  // 监听全屏状态变化
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   // 上一章/集
   const prevChapter = currentChapter && currentChapter > 1 ? currentChapter - 1 : null;
@@ -715,6 +725,9 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
                   <p className="font-semibold mb-1">⚠️ 演示模式</p>
                   <p className="opacity-90">
                     这是一个演示版本的视频播放器。在真实环境中，这里会集成真实的视频播放器（如 Video.js、DPlayer 等）和视频源。
+                  </p>
+                  <p className="mt-2 opacity-80 text-xs">
+                    当前演示使用模拟数据，集数和播放进度仅供参考。
                   </p>
                 </div>
               </div>

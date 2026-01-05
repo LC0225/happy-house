@@ -248,6 +248,20 @@ export default function Home() {
     }
   };
 
+  // 清除所有数据
+  const clearAllData = () => {
+    if (confirm('确定要清除所有搜索数据吗？此操作不可恢复。')) {
+      setRealData([]);
+      setSearchQuery('');
+      setSearchError(null);
+      setSearchSource(null);
+      setLastSearchKeyword('');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('realMediaData');
+      }
+    }
+  };
+
   // 根据选择的类型获取对应的分类和标签
   const currentGenres = getGenresByType(selectedType);
   const currentTags = getTagsByType(selectedType);
@@ -276,18 +290,14 @@ export default function Home() {
 
   // 重置筛选
   const handleResetFilters = () => {
-    setTempFilters({
+    const resetFilters = {
       country: '全部',
       year: '全部',
       genre: '全部',
       tag: '全部'
-    });
-    setAppliedFilters({
-      country: '全部',
-      year: '全部',
-      genre: '全部',
-      tag: '全部'
-    });
+    };
+    setTempFilters(resetFilters);
+    setAppliedFilters(resetFilters);
   };
 
   const filteredData = useMemo(() => {
@@ -381,14 +391,29 @@ export default function Home() {
           )}
 
           {/* 数据状态提示 */}
-          <div className="mt-4 flex items-center gap-3">
-            <span className="text-sm text-gray-600">
-              当前共有 <strong>{realData.length}</strong> 部作品
-            </span>
-            {searchSource && lastSearchKeyword && (
-              <span className="text-sm text-gray-500 ml-2">
-                （已搜索 "{lastSearchKeyword}"）
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">
+                当前共有 <strong>{realData.length}</strong> 部作品
               </span>
+              {searchSource && lastSearchKeyword && (
+                <span className="text-sm text-gray-500 ml-2">
+                  （已搜索 "{lastSearchKeyword}"）
+                </span>
+              )}
+            </div>
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSearchError(null);
+                  setSearchSource(null);
+                  setLastSearchKeyword('');
+                }}
+                className="text-sm text-red-600 hover:text-red-700 font-medium"
+              >
+                清除搜索
+              </button>
             )}
             {realData.length === 0 && (
               <Link
@@ -397,6 +422,14 @@ export default function Home() {
               >
                 前往个人中心使用爬虫获取数据 →
               </Link>
+            )}
+            {realData.length > 0 && (
+              <button
+                onClick={clearAllData}
+                className="text-sm text-red-600 hover:text-red-700 font-medium"
+              >
+                清除所有数据
+              </button>
             )}
           </div>
         </div>
