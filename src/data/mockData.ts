@@ -108,6 +108,47 @@ export const mockMediaData: MediaContent[] = [
     tags: ['爆款', '完结', 'VIP'],
     status: '完结'
   },
+
+  // 电影
+  {
+    id: '6',
+    title: '流浪地球',
+    type: '电影',
+    country: '中国',
+    year: 2019,
+    rating: 8.5,
+    image: '/images/placeholders/movie-1.jpg',
+    description: '面对太阳氦闪危机，人类带着地球流浪宇宙',
+    genre: ['科幻', '灾难'],
+    tags: ['国产', '热门', 'IMAX'],
+    status: '完结'
+  },
+  {
+    id: '7',
+    title: '阿凡达',
+    type: '电影',
+    country: '美国',
+    year: 2009,
+    rating: 8.7,
+    image: '/images/placeholders/movie-2.jpg',
+    description: '在潘多拉星球上，人类与纳美人的故事',
+    genre: ['科幻', '冒险'],
+    tags: ['经典', '3D', 'IMAX'],
+    status: '完结'
+  },
+  {
+    id: '8',
+    title: '千与千寻',
+    type: '电影',
+    country: '日本',
+    year: 2001,
+    rating: 9.3,
+    image: '/images/placeholders/movie-3.jpg',
+    description: '千寻在神秘世界中的成长冒险',
+    genre: ['动画', '奇幻'],
+    tags: ['经典', '获奖作品', '治愈'],
+    status: '完结'
+  },
 ];
 
 export const countries = ['全部', '中国', '日本', '美国'];
@@ -133,6 +174,10 @@ export const varietyTags = ['全部', '经典', '完结'];
 export const shortDramaGenres = ['全部', '甜宠', '总裁'];
 export const shortDramaTags = ['全部', '爆款', '完结', 'VIP'];
 
+// 电影分类
+export const movieGenres = ['全部', '科幻', '动作', '剧情', '喜剧', '动画'];
+export const movieTags = ['全部', '经典', '获奖作品', 'IMAX', '3D', '热门'];
+
 // 根据类型获取分类
 export const getGenresByType = (type: string): string[] => {
   switch (type) {
@@ -146,6 +191,8 @@ export const getGenresByType = (type: string): string[] => {
       return varietyGenres;
     case '短剧':
       return shortDramaGenres;
+    case '电影':
+      return movieGenres;
     default:
       return ['全部'];
   }
@@ -164,6 +211,8 @@ export const getTagsByType = (type: string): string[] => {
       return varietyTags;
     case '短剧':
       return shortDramaTags;
+    case '电影':
+      return movieTags;
     default:
       return ['全部'];
   }

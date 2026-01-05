@@ -3,7 +3,7 @@ import { MediaContent } from '@/types/media';
 
 // 爬虫配置
 interface CrawlerConfig {
-  type: '小说' | '动漫' | '电视剧' | '综艺' | '短剧';
+  type: '小说' | '动漫' | '电视剧' | '综艺' | '短剧' | '电影';
   count?: number;
   sources?: CrawlerSource[]; // 指定使用的数据源，默认使用所有可用源
   keyword?: string; // 自定义搜索关键词
@@ -366,6 +366,13 @@ export class MediaCrawler {
         { title: '穿越时空的爱恋', country: '中国', year: 2023, rating: 7.9 },
         { title: '霸道总裁爱上我', country: '中国', year: 2024, rating: 8.3 },
       ],
+      '电影': [
+        { title: '流浪地球', country: '中国', year: 2019, rating: 8.5 },
+        { title: '阿凡达', country: '美国', year: 2009, rating: 8.7 },
+        { title: '千与千寻', country: '日本', year: 2001, rating: 9.3 },
+        { title: '泰坦尼克号', country: '美国', year: 1997, rating: 9.2 },
+        { title: '复仇者联盟', country: '美国', year: 2012, rating: 8.8 },
+      ],
     };
 
     // 获取基础示例
@@ -424,6 +431,7 @@ export class MediaCrawler {
       '电视剧': ['剧情', '科幻', '悬疑', '喜剧', '历史'],
       '综艺': ['真人秀', '音乐', '脱口秀', '竞技', '访谈'],
       '短剧': ['甜宠', '总裁', '穿越', '重生', '悬疑'],
+      '电影': ['科幻', '动作', '剧情', '喜剧', '动画', '冒险'],
     };
     const genres = genreMap[type] || ['热门'];
     const shuffled = genres.sort(() => Math.random() - 0.5);

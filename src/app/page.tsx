@@ -313,7 +313,7 @@ export default function Home() {
     });
   }, [selectedType, appliedFilters, searchQuery, realData]);
 
-  const mediaTypes: (MediaType | '全部')[] = ['全部', '小说', '动漫', '电视剧', '综艺', '短剧'];
+  const mediaTypes: (MediaType | '全部')[] = ['全部', '小说', '动漫', '电视剧', '综艺', '短剧', '电影'];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -326,7 +326,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">快乐屋</h1>
-              <p className="text-purple-100 text-sm md:text-base">发现小说、动漫、电视剧、综艺、短剧</p>
+              <p className="text-purple-100 text-sm md:text-base">发现小说、动漫、电视剧、综艺、短剧、电影</p>
             </div>
             <Link
               href="/profile"

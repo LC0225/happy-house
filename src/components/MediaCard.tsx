@@ -41,6 +41,8 @@ export default function MediaCard({ media, isFavorite = false, onFavoriteToggle 
         return 'bg-green-500';
       case '短剧':
         return 'bg-orange-500';
+      case '电影':
+        return 'bg-red-500';
       default:
         return 'bg-gray-500';
     }

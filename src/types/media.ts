@@ -1,4 +1,4 @@
-export type MediaType = '小说' | '动漫' | '电视剧' | '综艺' | '短剧';
+export type MediaType = '小说' | '动漫' | '电视剧' | '综艺' | '短剧' | '电影';
 
 export interface Chapter {
   id: string;
