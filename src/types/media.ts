@@ -1,5 +1,12 @@
 export type MediaType = '小说' | '动漫' | '电视剧' | '综艺' | '短剧';
 
+export interface Chapter {
+  id: string;
+  title: string;
+  content: string;
+  number: number;
+}
+
 export interface MediaContent {
   id: string;
   title: string;
@@ -13,6 +20,7 @@ export interface MediaContent {
   tags: string[];
   status: '完结' | '连载中' | '更新中';
   externalUrl?: string; // 外部网站链接（可选）
+  chapters?: Chapter[]; // 小说章节（仅小说类型）
 }
 
 export interface FilterOptions {

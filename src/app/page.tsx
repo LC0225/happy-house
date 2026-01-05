@@ -221,15 +221,15 @@ export default function Home() {
         className="text-white shadow-lg relative"
         style={{ backgroundColor: "#002FA7" }}
       >
-        <div className="container mx-auto px-4 py-6 relative">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 md:py-6 relative">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">快乐屋</h1>
-              <p className="text-purple-100">发现小说、动漫、电视剧、综艺、短剧</p>
+              <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">快乐屋</h1>
+              <p className="text-purple-100 text-sm md:text-base">发现小说、动漫、电视剧、综艺、短剧</p>
             </div>
             <Link
               href="/profile"
-              className="px-6 py-3 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center gap-2"
+              className="px-4 md:px-6 py-2 md:py-3 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors flex items-center gap-2 text-sm md:text-base justify-center sm:justify-start"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -244,19 +244,19 @@ export default function Home() {
       <main className="container mx-auto px-4 py-8">
         {/* 搜索栏 */}
         <div className="mb-8">
-          <form onSubmit={handleSearch} className="flex gap-4">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <input
               type="text"
               placeholder="搜索作品名称（自动爬取相关内容）..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={isSearching}
-              className="flex-1 px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
+              className="flex-1 px-4 py-3 text-base md:text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100"
             />
             <button
               type="submit"
               disabled={isSearching}
-              className="px-8 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed transition shadow-lg flex items-center gap-2"
+              className="w-full sm:w-auto px-8 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-purple-300 disabled:cursor-not-allowed transition shadow-lg flex items-center justify-center gap-2"
             >
               {isSearching ? (
                 <>
@@ -333,16 +333,16 @@ export default function Home() {
             />
 
             {/* 操作按钮 */}
-            <div className="flex gap-4 mt-6 pt-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-4 mt-6 pt-6 border-t border-gray-200">
               <button
                 onClick={handleApplyFilters}
-                className="px-8 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                className="w-full sm:w-auto px-8 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors"
               >
                 确认筛选
               </button>
               <button
                 onClick={handleResetFilters}
-                className="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                className="w-full sm:w-auto px-8 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
               >
                 重置
               </button>

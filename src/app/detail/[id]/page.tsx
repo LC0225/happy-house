@@ -40,6 +40,8 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
     }
   };
 
+  const isNovel = media.type === '小说';
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 头部 */}
@@ -61,7 +63,7 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
             </div>
 
             {/* 信息区域 */}
-            <div className="md:w-2/3 p-8">
+            <div className="md:w-2/3 p-6 md:p-8">
               {/* 类型和状态标签 */}
               <div className="flex items-center gap-3 mb-4">
                 <span className={`${getTypeColor(media.type)} text-white px-4 py-1 rounded-full text-sm font-medium`}>
@@ -73,17 +75,17 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
               </div>
 
               {/* 标题 */}
-              <h1 className="text-3xl font-bold text-gray-800 mb-4">{media.title}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">{media.title}</h1>
 
               {/* 评分和年份 */}
-              <div className="flex items-center gap-6 mb-6">
+              <div className="flex flex-wrap items-center gap-4 md:gap-6 mb-6">
                 <div className="flex items-center text-yellow-500">
-                  <span className="text-2xl font-bold mr-2">{media.rating}</span>
+                  <span className="text-xl md:text-2xl font-bold mr-2">{media.rating}</span>
                   <div className="flex">
                     {[...Array(5)].map((_, i) => (
                       <svg
                         key={i}
-                        className={`w-6 h-6 ${i < Math.floor(media.rating / 2) ? 'fill-current' : 'fill-gray-300'}`}
+                        className={`w-5 h-5 md:w-6 md:h-6 ${i < Math.floor(media.rating / 2) ? 'fill-current' : 'fill-gray-300'}`}
                         viewBox="0 0 20 20"
                       >
                         <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
@@ -91,20 +93,20 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
                     ))}
                   </div>
                 </div>
-                <div className="text-gray-600 text-lg">
+                <div className="text-gray-600 text-base md:text-lg">
                   {media.year}年 · {media.country}
                 </div>
               </div>
 
               {/* 描述 */}
               <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">简介</h2>
-                <p className="text-gray-600 leading-relaxed">{media.description}</p>
+                <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-2">简介</h2>
+                <p className="text-gray-600 leading-relaxed text-sm md:text-base">{media.description}</p>
               </div>
 
               {/* 题材 */}
               <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">题材</h2>
+                <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-2">题材</h2>
                 <div className="flex flex-wrap gap-2">
                   {media.genre.map((genre, index) => (
                     <span
@@ -119,7 +121,7 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
 
               {/* 标签 */}
               <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">标签</h2>
+                <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-2">标签</h2>
                 <div className="flex flex-wrap gap-2">
                   {media.tags.map((tag, index) => (
                     <span
@@ -133,26 +135,53 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
               </div>
 
               {/* 操作按钮 */}
-              <div className="flex gap-4">
-                <Link
-                  href={`/play/${media.id}`}
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-center"
-                >
-                  {media.type === '小说' ? '立即阅读' : '立即观看'}
-                </Link>
+              <div className="flex flex-wrap gap-4">
+                {isNovel && media.chapters && media.chapters.length > 0 ? (
+                  <Link
+                    href={`/reader/${media.id}/1`}
+                    className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-center"
+                  >
+                    开始阅读
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/play/${media.id}`}
+                    className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-center"
+                  >
+                    {media.type === '小说' ? '立即阅读' : '立即观看'}
+                  </Link>
+                )}
                 <button className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors">
                   加入收藏
                 </button>
               </div>
             </div>
           </div>
+
+          {/* 小说章节列表 */}
+          {isNovel && media.chapters && media.chapters.length > 0 && (
+            <div className="border-t border-gray-200 p-6 md:p-8">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6">章节列表</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {media.chapters.map((chapter) => (
+                  <Link
+                    key={chapter.id}
+                    href={`/reader/${media.id}/${chapter.number}`}
+                    className="px-4 py-3 bg-gray-50 hover:bg-purple-50 text-gray-700 hover:text-purple-700 rounded-lg transition-colors text-sm md:text-base text-center"
+                  >
+                    {chapter.title}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
       {/* 页脚 */}
       <footer className="bg-gray-800 text-white py-6 mt-12">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-400">多媒体内容平台 - 发现更多精彩内容</p>
+          <p className="text-gray-400 text-sm md:text-base">多媒体内容平台 - 发现更多精彩内容</p>
         </div>
       </footer>
     </div>
