@@ -1,5 +1,7 @@
-import { SearchClient, Config, APIError } from 'coze-coding-dev-sdk';
+import { SearchClient, Config, APIError, ImageGenerationClient } from 'coze-coding-dev-sdk';
+import { S3Storage } from 'coze-coding-dev-sdk';
 import { MediaContent } from '@/types/media';
+import axios from 'axios';
 
 // 爬虫配置
 interface CrawlerConfig {
@@ -7,6 +9,7 @@ interface CrawlerConfig {
   count?: number;
   sources?: CrawlerSource[]; // 指定使用的数据源，默认使用所有可用源
   keyword?: string; // 自定义搜索关键词
+  generateCover?: boolean; // 是否生成封面图片（默认 false，使用占位图）
 }
 
 // 数据源类型
@@ -22,6 +25,8 @@ interface CrawlerResult {
 
 export class MediaCrawler {
   private searchClient: SearchClient | null = null;
+  private imageClient: ImageGenerationClient | null = null;
+  private storage: S3Storage | null = null;
   private sdkAvailable: boolean = false;
 
   constructor() {
@@ -29,10 +34,24 @@ export class MediaCrawler {
     try {
       const config = new Config();
       this.searchClient = new SearchClient(config);
+      this.imageClient = new ImageGenerationClient(config);
       this.sdkAvailable = true;
     } catch (error) {
       console.warn('搜索 SDK 初始化失败，将使用 fallback 模式:', error);
       this.sdkAvailable = false;
+    }
+
+    // 初始化对象存储
+    try {
+      this.storage = new S3Storage({
+        endpointUrl: process.env.COZE_BUCKET_ENDPOINT_URL,
+        accessKey: "",
+        secretKey: "",
+        bucketName: process.env.COZE_BUCKET_NAME,
+        region: "cn-beijing",
+      });
+    } catch (error) {
+      console.warn('对象存储初始化失败:', error);
     }
   }
 
@@ -773,6 +792,131 @@ export class MediaCrawler {
       }
     }
 
+    return results;
+  }
+
+  /**
+   * 为单个作品生成封面图片
+   */
+  async generateCoverForItem(item: MediaContent): Promise<string> {
+    try {
+      // 如果对象存储不可用，返回占位图
+      if (!this.storage) {
+        console.warn('对象存储不可用，使用占位图');
+        return '/images/placeholders/default.jpg';
+      }
+
+      // 如果图片生成客户端不可用，返回占位图
+      if (!this.imageClient || !this.sdkAvailable) {
+        console.warn('图片生成 SDK 不可用，使用占位图');
+        return '/images/placeholders/default.jpg';
+      }
+
+      // 根据作品类型和描述生成封面提示词
+      const prompt = this.generateCoverPrompt(item);
+      console.log(`[封面生成] 为 "${item.title}" 生成封面，提示词: ${prompt}`);
+
+      // 生成图片
+      const response = await this.imageClient.generate({
+        prompt,
+        size: '2K',
+        watermark: false,
+      });
+
+      const helper = this.imageClient.getResponseHelper(response);
+
+      if (!helper.success || helper.imageUrls.length === 0) {
+        console.error(`[封面生成] 失败:`, helper.errorMessages);
+        return '/images/placeholders/default.jpg';
+      }
+
+      // 下载图片
+      const imageUrl = helper.imageUrls[0];
+      const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+      const imageBuffer = Buffer.from(imageResponse.data);
+
+      // 生成文件名：标题_UUID.jpg
+      const safeTitle = item.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_').substring(0, 50);
+      const fileName = `${safeTitle}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`;
+      const fileKey = `covers/${fileName}`;
+
+      // 上传到对象存储
+      const key = await this.storage.uploadFile({
+        fileContent: imageBuffer,
+        fileName: fileKey,
+        contentType: 'image/jpeg',
+      });
+
+      // 生成访问 URL
+      const coverUrl = await this.storage.generatePresignedUrl({
+        key,
+        expireTime: 31536000, // 1年有效期
+      });
+
+      console.log(`[封面生成] 成功: ${coverUrl}`);
+      return coverUrl;
+
+    } catch (error) {
+      console.error(`[封面生成] 为 "${item.title}" 生成封面失败:`, error);
+      return '/images/placeholders/default.jpg';
+    }
+  }
+
+  /**
+   * 生成封面提示词
+   */
+  private generateCoverPrompt(item: MediaContent): string {
+    // 根据作品类型生成不同的提示词
+    const typePromptMap: Record<string, string> = {
+      '小说': 'book cover, minimalist design, elegant typography, Chinese literature style, high quality, 2K resolution',
+      '动漫': 'anime poster, vibrant colors, Japanese anime style, character illustration, dynamic composition, high quality, 2K resolution',
+      '电视剧': 'TV series poster, cinematic style, dramatic lighting, professional photography, high quality, 2K resolution',
+      '综艺': 'variety show poster, colorful, energetic, entertainment style, modern design, high quality, 2K resolution',
+      '短剧': 'drama poster, romantic atmosphere, soft lighting, emotional storytelling, high quality, 2K resolution',
+      '电影': 'movie poster, epic scene, cinematic quality, dramatic lighting, professional composition, high quality, 2K resolution',
+    };
+
+    const basePrompt = typePromptMap[item.type] || typePromptMap['电影'];
+
+    // 添加作品标题和描述信息
+    const detailPrompt = `, featuring "${item.title}", ${item.genre.join(' and ')} genre, ${item.tags.join(' and ')}`;
+
+    return `${basePrompt}${detailPrompt}`;
+  }
+
+  /**
+   * 批量生成封面（用于现有数据）
+   */
+  async generateCoversForItems(items: MediaContent[]): Promise<MediaContent[]> {
+    console.log(`[批量封面生成] 开始为 ${items.length} 个作品生成封面...`);
+
+    const results: MediaContent[] = [];
+    const batchSize = 3; // 每批处理3个，避免API限流
+
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+
+      console.log(`[批量封面生成] 处理批次 ${i / batchSize + 1}/${Math.ceil(items.length / batchSize)}`);
+
+      const batchResults = await Promise.all(
+        batch.map(async (item) => {
+          const coverUrl = await this.generateCoverForItem(item);
+          return {
+            ...item,
+            image: coverUrl,
+          };
+        })
+      );
+
+      results.push(...batchResults);
+
+      // 等待一段时间，避免API限流
+      if (i + batchSize < items.length) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+
+    console.log(`[批量封面生成] 完成，成功生成 ${results.length} 个封面`);
     return results;
   }
 }
