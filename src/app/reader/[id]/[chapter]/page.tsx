@@ -5,6 +5,7 @@ import { mockMediaData } from '@/data/mockData';
 import { use } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Settings, X } from 'lucide-react';
+import { MediaContent } from '@/types/media';
 
 export default function ReaderPage({ params }: { params: Promise<{ id: string; chapter: string }> }) {
   const resolvedParams = use(params);
@@ -15,9 +16,12 @@ export default function ReaderPage({ params }: { params: Promise<{ id: string; c
   const [brightness, setBrightness] = useState(100);
   const [backgroundColor, setBackgroundColor] = useState<'white' | 'warm' | 'dark' | 'green'>('white');
   const [showSettings, setShowSettings] = useState(false);
+  const [novel, setNovel] = useState<MediaContent | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   // 从 localStorage 加载设置
   useEffect(() => {
+    setMounted(true);
     const savedSettings = localStorage.getItem('readerSettings');
     if (savedSettings) {
       const settings = JSON.parse(savedSettings);
@@ -33,8 +37,48 @@ export default function ReaderPage({ params }: { params: Promise<{ id: string; c
     localStorage.setItem('readerSettings', JSON.stringify(settings));
   }, [fontSize, brightness, backgroundColor]);
 
-  // 查找小说和章节
-  const novel = mockMediaData.find(item => item.id === id);
+  // 从 localStorage 加载小说数据
+  useEffect(() => {
+    try {
+      const realDataSaved = localStorage.getItem('realMediaData');
+      const realData = realDataSaved ? JSON.parse(realDataSaved) : [];
+
+      // 先从真实数据中查找
+      const foundInReal = realData.find((item: MediaContent) => item.id === id);
+      if (foundInReal) {
+        // 如果是小说但没有章节，尝试从 mockData 复制章节
+        if (foundInReal.type === '小说' && (!foundInReal.chapters || foundInReal.chapters.length === 0)) {
+          const mockNovel = mockMediaData.find(m => m.title === foundInReal.title && m.type === '小说');
+          if (mockNovel && mockNovel.chapters) {
+            setNovel({
+              ...foundInReal,
+              chapters: mockNovel.chapters
+            });
+            return;
+          }
+        }
+        setNovel(foundInReal);
+        return;
+      }
+
+      // 再从 mockData 中查找
+      const foundInMock = mockMediaData.find(item => item.id === id);
+      if (foundInMock) {
+        setNovel(foundInMock);
+        return;
+      }
+
+      // 都没找到
+      setNovel(null);
+    } catch (error) {
+      console.error('Failed to load novel data:', error);
+      // 降级到只从 mockData 查找
+      const foundInMock = mockMediaData.find(item => item.id === id);
+      setNovel(foundInMock || null);
+    }
+  }, [id]);
+
+  // 查找章节
   const currentChapterNumber = parseInt(chapter);
   const currentChapter = novel?.chapters?.find(ch => ch.number === currentChapterNumber);
   const totalChapters = novel?.chapters?.length || 0;
@@ -50,11 +94,38 @@ export default function ReaderPage({ params }: { params: Promise<{ id: string; c
     return configs[backgroundColor];
   }, [backgroundColor]);
 
-  if (!novel || !currentChapter) {
+  if (!mounted) {
+    // 首次渲染时显示加载状态
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  if (!novel) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-800 mb-4">内容不存在</h1>
+          <p className="text-gray-600 mb-4">该小说可能已被删除或数据未正确加载</p>
+          <Link href="/" className="text-purple-600 hover:text-purple-800">
+            返回首页
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentChapter) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">章节不存在</h1>
+          <p className="text-gray-600 mb-4">该章节可能不存在或小说暂无章节内容</p>
+          <Link href={`/detail/${id}`} className="text-purple-600 hover:text-purple-800 mr-4">
+            返回详情页
+          </Link>
           <Link href="/" className="text-purple-600 hover:text-purple-800">
             返回首页
           </Link>

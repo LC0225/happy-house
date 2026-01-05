@@ -172,6 +172,11 @@ export class MediaCrawler {
     // 豆瓣 API 需要申请，这里模拟调用
     // 实际使用时应该配置豆瓣 API key
     try {
+      // 检查 SDK 是否可用
+      if (!this.sdkAvailable || !this.searchClient) {
+        return this.generateFallbackData(type, count);
+      }
+
       const keywords = this.getSearchKeywords(type);
       const items: MediaContent[] = [];
 
@@ -192,10 +197,10 @@ export class MediaCrawler {
         }
       }
 
-      return { success: true, data: items.slice(0, count) };
+      return { success: true, data: items.slice(0, count), source: 'douban' };
     } catch (error) {
       console.error('豆瓣爬取失败:', error);
-      return { success: false, error: '豆瓣爬取失败' };
+      return this.generateFallbackData(type, count);
     }
   }
 

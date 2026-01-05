@@ -3,18 +3,60 @@
 import { mockMediaData } from '@/data/mockData';
 import { MediaContent } from '@/types/media';
 import Link from 'next/link';
-import { use } from 'react';
+import { use, useState, useEffect } from 'react';
 import PlaceholderImage from '@/components/PlaceholderImage';
 
 export default function DetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const media = mockMediaData.find(item => item.id === resolvedParams.id);
+  const [media, setMedia] = useState<MediaContent | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // 从 localStorage 加载真实数据
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const realDataSaved = localStorage.getItem('realMediaData');
+      const realData = realDataSaved ? JSON.parse(realDataSaved) : [];
+
+      // 先从真实数据中查找
+      const foundInReal = realData.find((item: MediaContent) => item.id === resolvedParams.id);
+      if (foundInReal) {
+        setMedia(foundInReal);
+        return;
+      }
+
+      // 再从 mockData 中查找
+      const foundInMock = mockMediaData.find(item => item.id === resolvedParams.id);
+      if (foundInMock) {
+        setMedia(foundInMock);
+        return;
+      }
+
+      // 都没找到
+      setMedia(null);
+    } catch (error) {
+      console.error('Failed to load media data:', error);
+      // 降级到只从 mockData 查找
+      const foundInMock = mockMediaData.find(item => item.id === resolvedParams.id);
+      setMedia(foundInMock || null);
+    }
+  }, [resolvedParams.id]);
+
+  if (!mounted) {
+    // 首次渲染时显示加载状态
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
 
   if (!media) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-800 mb-4">内容不存在</h1>
+          <p className="text-gray-600 mb-4">该作品可能已被删除或数据未正确加载</p>
           <Link href="/" className="text-purple-600 hover:text-purple-800">
             返回首页
           </Link>
@@ -41,6 +83,18 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
   };
 
   const isNovel = media.type === '小说';
+
+  // 对于小说，如果没有章节，检查 mockData 中是否有对应的章节
+  let mediaWithChapters = media;
+  if (isNovel && (!media.chapters || media.chapters.length === 0)) {
+    const mockNovel = mockMediaData.find(m => m.title === media.title && m.type === '小说');
+    if (mockNovel && mockNovel.chapters) {
+      mediaWithChapters = {
+        ...media,
+        chapters: mockNovel.chapters
+      };
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
