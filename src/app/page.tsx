@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { countries, years, getGenresByType, getTagsByType, mockMediaData } from '@/data/mockData';
 import { MediaType, FilterOptions } from '@/types/media';
 import MediaCard from '@/components/MediaCard';
@@ -10,7 +10,6 @@ import FilterBar from '@/components/FilterBar';
 
 export default function Home() {
   const pathname = usePathname();
-  const router = useRouter();
 
   const [selectedType, setSelectedType] = useState<MediaType>('电影');
 
