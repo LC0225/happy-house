@@ -139,14 +139,14 @@ export const mockMediaData: MediaContent[] = [
 
   // 电影
   {
-    id: '6',
-    title: '流浪地球',
+    id: '9',
+    title: '流浪地球2',
     type: '电影',
     country: '中国',
-    year: 2019,
+    year: 2023,
     rating: 8.5,
     image: '/images/placeholders/movie-1.jpg',
-    description: '面对太阳氦闪危机，人类带着地球流浪宇宙',
+    description: '面对太阳氦闪危机，人类带着地球流浪宇宙的续作',
     genre: ['科幻', '灾难'],
     tags: ['国产', '热门', 'IMAX'],
     status: '完结'
