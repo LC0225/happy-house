@@ -5,9 +5,11 @@ import { MediaContent } from '@/types/media';
 import Link from 'next/link';
 import { use, useState, useEffect } from 'react';
 import PlaceholderImage from '@/components/PlaceholderImage';
+import { useRouter } from 'next/navigation';
 
 export default function DetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
+  const router = useRouter();
   const [media, setMedia] = useState<MediaContent | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -212,12 +214,17 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
               {/* 操作按钮 */}
               <div className="flex flex-wrap gap-4">
                 {isNovel && media.chapters && media.chapters.length > 0 ? (
-                  <Link
-                    href={`/reader/${media.id}/1`}
-                    className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-center"
+                  <button
+                    onClick={() => {
+                      console.log('=== 开始阅读点击 ===');
+                      console.log('小说 ID:', media.id);
+                      console.log('目标 URL:', `/reader/${media.id}/1`);
+                      router.push(`/reader/${media.id}/1`);
+                    }}
+                    className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors text-center cursor-pointer"
                   >
                     开始阅读
-                  </Link>
+                  </button>
                 ) : (
                   <Link
                     href={`/play/${media.id}`}
@@ -239,11 +246,9 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
               <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6">章节列表</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {media.chapters.map((chapter) => (
-                  <Link
+                  <button
                     key={chapter.id}
-                    href={`/reader/${media.id}/${chapter.number}`}
-                    className="px-4 py-3 bg-gray-50 hover:bg-purple-50 text-gray-700 hover:text-purple-700 rounded-lg transition-colors text-sm md:text-base text-center"
-                    onClick={(e) => {
+                    onClick={() => {
                       console.log('=== 章节点击调试 ===');
                       console.log('点击的章节:', chapter.title);
                       console.log('章节 ID:', chapter.id);
@@ -251,10 +256,13 @@ export default function DetailPage({ params }: { params: Promise<{ id: string }>
                       console.log('小说 ID:', media.id);
                       console.log('目标 URL:', `/reader/${media.id}/${chapter.number}`);
                       console.log('当前 URL:', window.location.href);
+                      console.log('即将跳转...');
+                      router.push(`/reader/${media.id}/${chapter.number}`);
                     }}
+                    className="px-4 py-3 bg-gray-50 hover:bg-purple-50 text-gray-700 hover:text-purple-700 rounded-lg transition-colors text-sm md:text-base text-center cursor-pointer"
                   >
                     {chapter.title}
-                  </Link>
+                  </button>
                 ))}
               </div>
             </div>
