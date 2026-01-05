@@ -1,37 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SearchClient, Config } from 'coze-coding-dev-sdk';
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const query = searchParams.get('query') || '测试';
+    const body = await request.json();
+    const { query = '三体小说', count = 5 } = body;
 
-    console.log('测试搜索:', query);
+    console.log('开始测试搜索:', { query, count });
 
+    // 创建搜索客户端
     const config = new Config();
-    const client = new SearchClient(config);
+    const searchClient = new SearchClient(config);
 
-    // 使用 search 方法而不是 webSearch
-    const response = await client.search({
-      query: query,
-      search_type: 'web',
-      count: 5,
-    });
+    // 执行搜索
+    const response = await searchClient.webSearch(
+      query,
+      count,
+      false // 不需要摘要，只获取原始结果
+    );
 
-    console.log('搜索结果:', JSON.stringify(response, null, 2));
+    console.log('搜索响应:', JSON.stringify(response, null, 2));
 
     return NextResponse.json({
-      query,
-      hasWebItems: !!response.web_items,
-      webItemsCount: response.web_items?.length || 0,
-      hasSummary: !!response.summary,
-      webItems: response.web_items?.slice(0, 3) || [],
+      success: true,
+      data: response,
     });
   } catch (error) {
     console.error('测试搜索失败:', error);
     return NextResponse.json({
-      error: error instanceof Error ? error.message : '未知错误',
-      stack: error instanceof Error ? error.stack : undefined,
+      success: false,
+      error: error instanceof Error ? error.message : '搜索失败',
+      details: error instanceof Error ? error.stack : undefined,
     }, { status: 500 });
   }
 }

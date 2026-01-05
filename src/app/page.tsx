@@ -31,6 +31,8 @@ export default function Home() {
   const [realData, setRealData] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchSource, setSearchSource] = useState<string | null>(null);
+  const [lastSearchKeyword, setLastSearchKeyword] = useState<string>('');
 
   // 从 localStorage 加载收藏状态和真实数据
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -88,6 +90,7 @@ export default function Home() {
 
     setIsSearching(true);
     setSearchError(null);
+    setSearchSource(null);
 
     try {
       const response = await fetch('/api/crawler/search', {
@@ -105,6 +108,10 @@ export default function Home() {
       const data = await response.json();
 
       if (data.success && data.data) {
+        // 更新搜索来源信息
+        setSearchSource(data.summary?.source || 'unknown');
+        setLastSearchKeyword(keyword);
+
         // 将搜索结果合并到现有数据中
         setRealData(prev => {
           const newData = [...prev];
@@ -139,7 +146,7 @@ export default function Home() {
           setSelectedType(firstResultType);
         }
       } else {
-        setSearchError(data.error || '搜索失败，请重试');
+        setSearchError(data.error || data.message || '搜索失败，请重试');
       }
     } catch (error) {
       setSearchError('搜索失败，请检查网络连接');
@@ -284,6 +291,11 @@ export default function Home() {
           {/* 数据状态提示 */}
           <div className="mt-4 flex items-center gap-3">
             <span className="text-sm text-gray-600">当前共有 <strong>{realData.length}</strong> 部作品</span>
+            {searchSource && lastSearchKeyword && (
+              <span className="text-sm text-gray-500">
+                （搜索 "{lastSearchKeyword}" 获取，数据来源: {searchSource === 'fallback' ? '示例数据' : searchSource}）
+              </span>
+            )}
             {realData.length === 0 && (
               <Link
                 href="/profile"

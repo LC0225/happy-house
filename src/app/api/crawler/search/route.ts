@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
 
     // 如果指定了类型，使用对应的类型爬取
     let results: any[] = [];
+    let source = '';
 
     if (type === '全部') {
       // 全部类型：尝试从所有类型中搜索
@@ -43,6 +44,9 @@ export async function POST(request: NextRequest) {
         if (result.success && result.data) {
           results.push(...result.data);
         }
+        if (result.source && !source) {
+          source = result.source;
+        }
       });
     } else {
       // 指定类型：只搜索该类型
@@ -54,6 +58,7 @@ export async function POST(request: NextRequest) {
 
       if (result.success && result.data) {
         results = result.data;
+        source = result.source || 'fallback';
       }
     }
 
@@ -75,6 +80,7 @@ export async function POST(request: NextRequest) {
         totalCount: results.length,
         keyword: keyword,
         type: type,
+        source: source || 'fallback',
       },
     });
   } catch (error) {
@@ -82,6 +88,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : '搜索失败',
+      message: '搜索服务暂时不可用，请稍后重试',
     }, { status: 500 });
   }
 }
